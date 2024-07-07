@@ -1,13 +1,23 @@
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-    <main class = "wrap">
-        <div class = "viewer">
-            <canvas id="canvas"></canvas>
-        </div>
-    </main>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script type="module" src="../src/Computer.js"></script>
-</body>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three/build/three.module.js",
+                "GLTFLoader": "https://unpkg.com/three@0.166.1/examples/jsm/loaders/GLTFLoader.js"
+            }
+        }</script>
+    </head>
+    <body>
+        <main class = "wrap">
+            <div class = "viewer">
+                <canvas id="canvas"></canvas>
+            </div>
+        </main>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script type="module" src="../src/Computer.js"></script>
+    </body>
+</html>
