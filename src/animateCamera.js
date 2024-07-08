@@ -3,7 +3,7 @@ export function animateCamera(camera) {
     const endPosition = { x: 0, y: 43, z: 38, rotationX: 0 };
 
     const tween = new TWEEN.Tween(startPosition)
-        .to(endPosition, 1500)
+        .to(endPosition, 2000)
         .easing(TWEEN.Easing.Quadratic.InOut)
         .onUpdate(() => {
             camera.position.set(startPosition.x, startPosition.y, startPosition.z);

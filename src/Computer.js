@@ -18,6 +18,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 setupLights(scene);
+
 loadModel(scene);
 
 animateCamera(camera);
