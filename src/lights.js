@@ -19,7 +19,7 @@ export function setupLights(scene) {
     directionalLight2.shadow.camera.near = 0.1;
     directionalLight2.shadow.camera.far = 500;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
 
     scene.add(directionalLight1);
     scene.add(directionalLight1.target);

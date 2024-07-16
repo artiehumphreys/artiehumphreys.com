@@ -1,4 +1,6 @@
 import { GLTFLoader } from "GLTFLoader";
+import { TextGeometry } from "TextGeometry";
+import { FontLoader } from "FontLoader";
 import * as THREE from "three";
 
 
@@ -14,8 +16,10 @@ export function loadModel(scene) {
 
                 const screenMaterial = new THREE.MeshStandardMaterial({
                     map: screenTexture,
-                    roughness: 0.1,
-                    metalness: 0.0
+                    roughness: 0.2,
+                    metalness: 0.0,
+                    emissive: new THREE.Color(0x444444),
+                    emissiveIntensity: 0.25
                 });
                 const screen = new THREE.Mesh(screenGeometry, screenMaterial);
                 screen.position.set(0, 42, 8.8);
@@ -41,17 +45,38 @@ export function loadModel(scene) {
 
     }
 
-    function createCenteredIcon(texture, positionX) {
+    function createCenteredIcon(texture, positionX, name) {
         const planeGeometry = curvePlanes(12.5, 8.5);
         const planeMaterial = new THREE.MeshStandardMaterial({
             map: texture,
             roughness: 0.1,
-            metalness: 0.0,
+            metalness: 0.2,
             transparent: true
         });
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.position.set(positionX, 42, 8.8);
+        plane.position.set(positionX, 44, 8.85);
         scene.add(plane);
+        addIconText(positionX, name);
+    }
+
+    function addIconText(positionX, name){
+        const fontLoader = new FontLoader();
+        fontLoader.load("https://unpkg.com/three@0.166.1/examples/fonts/gentilis_bold.typeface.json", function(font) {
+            const textGeometry = new TextGeometry(name, {
+                font: font,
+                size: 1,
+                depth: 0.1,
+                size: 0.75,
+                curveSegments: 12,
+                bevelEnabled: false
+            });
+            const textMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+            textGeometry.computeBoundingBox();
+            const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+            textMesh.position.set(positionX - textWidth / 2, 40, 16.9);
+            scene.add(textMesh);
+        });
     }
 
     const textureLoader = new THREE.TextureLoader();
@@ -67,10 +92,10 @@ export function loadModel(scene) {
             scene.add(gltf.scene);
             const model = gltf.scene;
             createScreen(model);
-            createCenteredIcon(aboutMeTexture, -15);
-            createCenteredIcon(contactTexture, 5);
-            createCenteredIcon(experienceTexture, 15);
-            createCenteredIcon(projectTexture, -5);
+            createCenteredIcon(aboutMeTexture, -15, "About Me");
+            createCenteredIcon(contactTexture, 15, "Contact");
+            createCenteredIcon(experienceTexture, 5, "Experience");
+            createCenteredIcon(projectTexture, -5, "Projects");
         },
         function (xhr) {
             console.log((xhr.loaded / xhr.total * 100) + '% loaded');
