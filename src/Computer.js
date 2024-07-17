@@ -1,39 +1,55 @@
 import * as THREE from "three";
+import * as TWEEN from "tween";
 import { setupLights } from "./lights.js";
-import { loadModel } from "./loadModel.js";
+import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
+import { handleIconClickEvents } from "./handleIconClickEvents.js";
 
-const scene = new THREE.Scene();
+export function computer() {
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 50, 100)
-camera.rotation.set(-0.5, 0, 0)
+  const scene = new THREE.Scene();
 
-const canvas = document.getElementById('canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.physicallyCorrectLights = true;
-renderer.shadowMap.enabled = true; 
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  camera.position.set(0, 50, 100);
+  camera.rotation.set(-0.5, 0, 0);
 
-setupLights(scene);
+  const canvas = document.getElementById("canvas");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.physicallyCorrectLights = true;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-loadModel(scene);
+  setupLights(scene);
 
-animateCamera(camera);
+  loadModel(scene);
 
-function animate(time) {
+  animateCamera(camera);
+
+  function animate(time) {
     requestAnimationFrame(animate);
     TWEEN.update(time);
     renderer.render(scene, camera);
-}
-animate();
+  }
+  animate();
 
-window.addEventListener('resize', () => {
+  window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  });
 
-
+  window.addEventListener(
+    "click",
+    handleIconClickEvents(scene, camera, raycaster, mouse),
+    false
+  );
+}
