@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as TWEEN from "tween";
 import { setupLights } from "./lights.js";
 import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";

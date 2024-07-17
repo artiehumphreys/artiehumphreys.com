@@ -8,6 +8,7 @@ function webgl_support() {
       !!window.WebGLRenderingContext &&
       (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
     );
+    // eslint-disable-next-line no-unused-vars
   } catch (e) {
     return false;
   }

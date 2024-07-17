@@ -34,7 +34,6 @@ export function createIcons(scene, textures) {
       function (font) {
         const textGeometry = new TextGeometry(name, {
           font: font,
-          size: 1,
           depth: 0.1,
           size: 0.75,
           curveSegments: 12,
