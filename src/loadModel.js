@@ -6,7 +6,10 @@ import * as THREE from "three";
 
 export function loadModel(scene) {
 
-    function createScreen(model){
+    const yPos = 42;
+    const zPos = 8.8;
+
+    function createComputerScreen(model){
         model.traverse(function (node) {
             if (node.isMesh && node.name === "defaultMaterial") {
                 const screenMesh = node;
@@ -22,7 +25,7 @@ export function loadModel(scene) {
                     emissiveIntensity: 0.25
                 });
                 const screen = new THREE.Mesh(screenGeometry, screenMaterial);
-                screen.position.set(0, 42, 8.8);
+                screen.position.set(0, yPos, zPos);
                 scene.add(screen);
             }
         });
@@ -51,10 +54,11 @@ export function loadModel(scene) {
             map: texture,
             roughness: 0.1,
             metalness: 0.2,
-            transparent: true
+            transparent: true,
         });
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.position.set(positionX, 44, 8.85);
+        plane.position.set(positionX, yPos + 2, zPos + 0.05);
+        plane.userData = { type: 'icon', text: name };
         scene.add(plane);
         addIconText(positionX, name);
     }
@@ -74,7 +78,7 @@ export function loadModel(scene) {
             const textMesh = new THREE.Mesh(textGeometry, textMaterial);
             textGeometry.computeBoundingBox();
             const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
-            textMesh.position.set(positionX - textWidth / 2, 40, 16.9);
+            textMesh.position.set(positionX - textWidth / 2, yPos - 2, zPos * 2 - 0.7);
             scene.add(textMesh);
         });
     }
@@ -91,7 +95,7 @@ export function loadModel(scene) {
         function (gltf) {
             scene.add(gltf.scene);
             const model = gltf.scene;
-            createScreen(model);
+            createComputerScreen(model);
             createCenteredIcon(aboutMeTexture, -15, "About Me");
             createCenteredIcon(contactTexture, 15, "Contact");
             createCenteredIcon(experienceTexture, 5, "Experience");

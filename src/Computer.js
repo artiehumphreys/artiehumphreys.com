@@ -2,6 +2,10 @@ import * as THREE from "three";
 import { setupLights } from "./lights.js";
 import { loadModel } from "./loadModel.js";
 import { animateCamera } from "./animateCamera.js";
+import { handleIconClickEvents } from "./handleIconClickEvents.js";
+
+raycaster = new THREE.Raycaster();
+mouse = new THREE.Vector2();
 
 const scene = new THREE.Scene();
 
@@ -35,5 +39,7 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+window.addEventListener('click', handleIconClickEvents(scene, camera), false);
 
 
