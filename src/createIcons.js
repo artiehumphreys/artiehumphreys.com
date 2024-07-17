@@ -3,7 +3,7 @@ import { TextGeometry } from "TextGeometry";
 import { FontLoader } from "FontLoader";
 import { curvePlanes } from "./utils/geometryUtils.js";
 
-const yPos = 39;
+const yPos = 42;
 const zPos = 8.85;
 
 export function createIcons(scene, textures) {

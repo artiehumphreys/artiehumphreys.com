@@ -25,8 +25,6 @@ setupLights(scene);
 
 loadModel(scene);
 
-
-
 animateCamera(camera);
 
 function animate(time) {
