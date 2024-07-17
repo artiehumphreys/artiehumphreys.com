@@ -1,6 +1,6 @@
 import { GLTFLoader } from "GLTFLoader";
 import { createComputerScreen } from "./createComputerScreen.js";
-import { createIcons } from "./createIcons.js";
+import { createIcons } from "./icons.js";
 import { loadScreenTexture, loadIconTextures } from "./utils/textureLoader.js";
 
 export function loadModel(scene) {

@@ -48,8 +48,21 @@ export function createIcons(scene, textures) {
         const textWidth =
           textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
         textMesh.position.set(xPos - textWidth / 2, yPos - 2, zPos * 2 - 0.7);
+        textMesh.userData = { type: "text" };
         scene.add(textMesh);
       }
     );
   }
+}
+
+export function hideIcons(scene) {
+  const objectsToRemove = [];
+  scene.children.forEach((child) => {
+    if (["icon", "text"].includes(child.userData.type)) {
+      objectsToRemove.push(child);
+    }
+  });
+  objectsToRemove.forEach((object) => {
+    scene.remove(object);
+  });
 }
