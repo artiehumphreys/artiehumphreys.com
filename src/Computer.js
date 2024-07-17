@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { setupLights } from "./lights.js";
-import { loadModel } from "./loadModel.js";
+import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
 
@@ -24,6 +24,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 setupLights(scene);
 
 loadModel(scene);
+
+
 
 animateCamera(camera);
 

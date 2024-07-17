@@ -1,7 +1,12 @@
-export function createComputerScreen(model){
+import * as THREE from "three";
+import { curvePlanes } from "./utils/geometryUtils.js";
+
+const yPos = 42;
+const zPos = 8.8;
+
+export function createComputerScreen(scene, model, screenTexture){
     model.traverse(function (node) {
         if (node.isMesh && node.name === "defaultMaterial") {
-            const screenMesh = node;
             const width = 50;
             const height = 34;
             const screenGeometry = curvePlanes(width, height);

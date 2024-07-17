@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 export function curvePlanes(width, height) {
     const screenGeometry = new THREE.PlaneGeometry(width, height, 25, 17);
     const vertices = screenGeometry.attributes.position.array;
