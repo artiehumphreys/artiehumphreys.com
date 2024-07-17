@@ -4,8 +4,8 @@ import { loadModel } from "./loadModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
 
-raycaster = new THREE.Raycaster();
-mouse = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 const scene = new THREE.Scene();
 
@@ -40,6 +40,6 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-window.addEventListener('click', handleIconClickEvents(scene, camera), false);
+window.addEventListener('click', handleIconClickEvents(scene, camera, raycaster, mouse), false);
 
 
