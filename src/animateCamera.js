@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 export function animateCamera(camera) {
   const startPosition = { x: 0, y: 50, z: 100, rotationX: -0.5 };
   const endPosition = { x: 0, y: 43, z: 38, rotationX: 0 };
