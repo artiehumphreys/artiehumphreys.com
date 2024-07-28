@@ -1,2 +1,2 @@
 # artiehumphreys.com
-My portfolio website created using threejs
+My portfolio website created using threejs, hosted on [artiehumphreys.com](url)
