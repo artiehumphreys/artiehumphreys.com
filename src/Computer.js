@@ -29,12 +29,6 @@ export function computer(path) {
 
   loadModel(scene);
 
-  function animate(time) {
-    requestAnimationFrame(animate);
-    TWEEN.update(time);
-    renderer.render(scene, camera);
-  }
-
   camera.position.set(0, 42, 38);
   loadPage();
 
@@ -51,12 +45,13 @@ export function computer(path) {
   );
 
   function loadPage() {
+    console.log(path);
     switch (path) {
-      case "about":
+      case "/about":
         break;
-      case "projects":
+      case "/projects":
         break;
-      case "experience":
+      case "/experience":
         break;
       default:
         camera.position.set(0, 50, 100);
@@ -67,5 +62,11 @@ export function computer(path) {
         animate();
         break;
     }
+  }
+
+  function animate(time) {
+    requestAnimationFrame(animate);
+    TWEEN.update(time);
+    renderer.render(scene, camera);
   }
 }
