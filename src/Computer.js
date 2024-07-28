@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import * as THREE from "three";
 import { setupLights } from "./lights.js";
 import { loadModel } from "./loadComputerModel.js";

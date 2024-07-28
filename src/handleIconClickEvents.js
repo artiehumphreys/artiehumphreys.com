@@ -1,3 +1,4 @@
+import { hideIcons } from "./icons.js";
 export function handleIconClickEvents(scene, camera, raycaster, mouse) {
   return function (event) {
     event.preventDefault();
@@ -9,6 +10,7 @@ export function handleIconClickEvents(scene, camera, raycaster, mouse) {
       const intersectedObject = intersects[0].object;
       if (intersectedObject.userData.type === "icon") {
         console.log(`Icon clicked: ${intersectedObject.userData.text}`);
+        hideIcons(scene);
       }
     }
   };
