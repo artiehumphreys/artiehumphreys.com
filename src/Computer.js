@@ -4,7 +4,7 @@ import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
 
-export function computer() {
+export function computer(path) {
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
@@ -16,8 +16,6 @@ export function computer() {
     0.1,
     1000
   );
-  camera.position.set(0, 50, 100);
-  camera.rotation.set(-0.5, 0, 0);
 
   const canvas = document.getElementById("canvas");
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -31,14 +29,14 @@ export function computer() {
 
   loadModel(scene);
 
-  animateCamera(camera);
-
   function animate(time) {
     requestAnimationFrame(animate);
     TWEEN.update(time);
     renderer.render(scene, camera);
   }
-  animate();
+
+  camera.position.set(0, 42, 38);
+  loadPage();
 
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -51,4 +49,23 @@ export function computer() {
     handleIconClickEvents(scene, camera, raycaster, mouse),
     false
   );
+
+  function loadPage() {
+    switch (path) {
+      case "about":
+        break;
+      case "projects":
+        break;
+      case "experience":
+        break;
+      default:
+        camera.position.set(0, 50, 100);
+        camera.rotation.set(-0.5, 0, 0);
+
+        animateCamera(camera);
+
+        animate();
+        break;
+    }
+  }
 }

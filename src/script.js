@@ -13,9 +13,11 @@ function webgl_support() {
     return false;
   }
 }
-
-webgl_support()
-  ? computer()
-  : console.error(
-      "WebGL is not supported on your browser. Please visit https://get.webgl.org/webgl2/ for more."
-    );
+document.addEventListener("DOMContentLoaded", () => {
+  const path = window.location.pathname;
+  webgl_support()
+    ? computer(path)
+    : console.error(
+        "WebGL is not supported on your browser. Please visit https://get.webgl.org/webgl2/ for more."
+      );
+});

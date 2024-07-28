@@ -8,7 +8,7 @@ export function loadIconTextures() {
   const experienceTexture = textureLoader.load(
     "../../public/icons/experience.png"
   );
-  const projectTexture = textureLoader.load("../../icons/public/projects.png");
+  const projectTexture = textureLoader.load("../../public/icons/projects.png");
 
   return {
     aboutMeTexture,
