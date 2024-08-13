@@ -4,9 +4,9 @@ import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
 import { aboutPage } from "./pages/about.js";
-import { hideIcons } from "./pages/home.js";
+import { hideIcons, createIcons } from "./pages/home.js";
 
-export function computer(path) {
+export function computer() {
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
@@ -47,17 +47,20 @@ export function computer(path) {
   );
 
   function loadPage() {
+    const path = window.location.hash;
+    console.log(path);
     switch (path) {
-      case "/about":
+      case "#/about":
         console.log("Loading About Page");
         hideIcons(scene);
         aboutPage(scene);
         break;
-      case "/projects":
+      case "#/projects":
         break;
-      case "/experience":
+      case "#/experience":
         break;
       default:
+        createIcons(scene);
         camera.position.set(0, 50, 100);
         camera.rotation.set(-0.5, 0, 0);
 

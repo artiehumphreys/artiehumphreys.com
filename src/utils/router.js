@@ -1,7 +1,8 @@
 import { computer } from "../Computer.js";
 
 export function route() {
-  const router = new Navigo("/", { hash: false });
+  // eslint-disable-next-line no-undef
+  const router = new Navigo("/", { hash: true });
 
   router
     .on("/", () => {
