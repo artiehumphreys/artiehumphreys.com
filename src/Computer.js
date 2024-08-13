@@ -7,17 +7,16 @@ import { aboutPage } from "./pages/about.js";
 import { hideIcons, createIcons } from "./pages/home.js";
 
 export function computer() {
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-
   const scene = new THREE.Scene();
-
   const camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
     0.1,
     1000
   );
+
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
 
   const canvas = document.getElementById("canvas");
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -28,11 +27,9 @@ export function computer() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   setupLights(scene);
-
   loadModel(scene);
 
-  camera.position.set(0, 42, 38);
-  loadPage();
+  camera.position.set(0, 43, 38);
 
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -46,34 +43,35 @@ export function computer() {
     false
   );
 
-  function loadPage() {
-    const path = window.location.hash;
-    console.log(path);
-    switch (path) {
-      case "#/about":
-        console.log("Loading About Page");
-        hideIcons(scene);
-        aboutPage(scene);
-        break;
-      case "#/projects":
-        break;
-      case "#/experience":
-        break;
-      default:
-        createIcons(scene);
-        camera.position.set(0, 50, 100);
-        camera.rotation.set(-0.5, 0, 0);
+  return { scene, camera, renderer };
+}
 
-        animateCamera(camera);
+export function renderPage(scene, camera, renderer, route) {
+  console.log(route);
+  switch (route) {
+    case "/about":
+      hideIcons(scene);
+      aboutPage(scene);
+      renderer.render(scene, camera);
+      break;
+    case "/projects":
+      break;
+    case "/experience":
+      break;
+    default: {
+      createIcons(scene);
+      camera.position.set(0, 50, 100);
+      camera.rotation.set(-0.5, 0, 0);
+      animateCamera(camera);
 
-        animate();
-        break;
+      animate();
+      break;
     }
   }
-
   function animate(time) {
     requestAnimationFrame(animate);
     TWEEN.update(time);
     renderer.render(scene, camera);
   }
+  animate();
 }

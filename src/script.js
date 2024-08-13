@@ -15,7 +15,7 @@ function webgl_support() {
   }
 }
 document.addEventListener("DOMContentLoaded", () => {
-  const _ = route();
+  route();
   webgl_support()
     ? computer()
     : console.error(

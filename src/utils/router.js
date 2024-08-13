@@ -1,21 +1,23 @@
-import { computer } from "../Computer.js";
+import { computer, renderPage } from "../Computer.js";
 
 export function route() {
+  const { scene, camera, renderer } = computer();
+
   // eslint-disable-next-line no-undef
   const router = new Navigo("/", { hash: true });
 
   router
     .on("/", () => {
-      computer("/");
+      renderPage(scene, camera, renderer, "/");
     })
     .on("/about", () => {
-      computer("/about");
+      renderPage(scene, camera, renderer, "/about");
     })
     .on("/projects", () => {
-      computer("/projects");
+      renderPage(scene, camera, renderer, "/projects");
     })
     .on("/contact", () => {
-      computer("/contact");
+      renderPage(scene, camera, renderer, "/contact");
     })
     .resolve();
 
