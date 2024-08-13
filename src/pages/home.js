@@ -2,11 +2,14 @@ import * as THREE from "three";
 import { TextGeometry } from "TextGeometry";
 import { FontLoader } from "FontLoader";
 import { curvePlanes } from "../utils/geometryUtils.js";
+import { loadIconTextures } from "../utils/textureLoader.js";
 
 const yPos = 42;
 const zPos = 8.85;
 
-export function createIcons(scene, textures) {
+export function createIcons(scene) {
+  const textures = loadIconTextures();
+
   createCenteredIcon(textures.aboutMeTexture, -15, "About Me");
   createCenteredIcon(textures.contactTexture, 15, "Contact");
   createCenteredIcon(textures.experienceTexture, 5, "Experience");

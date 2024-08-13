@@ -21,3 +21,7 @@ export function loadIconTextures() {
 export function loadScreenTexture() {
   return textureLoader.load("../../public/background.jpg");
 }
+
+export function loadPortraitTexture() {
+  return textureLoader.load("../../public/artiehumphreys.jpg");
+}
