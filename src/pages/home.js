@@ -6,6 +6,12 @@ import { loadIconTextures } from "../utils/textureLoader.js";
 
 const yPos = 42;
 const zPos = 8.85;
+const paths = {
+  "About Me": "about",
+  Contact: "contact",
+  Experience: "experience",
+  Projects: "projects",
+};
 
 export function createIcons(scene) {
   const textures = loadIconTextures();
@@ -25,7 +31,7 @@ export function createIcons(scene) {
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.position.set(xPos, yPos + 2, zPos + 0.05);
-    plane.userData = { type: "icon", text: name };
+    plane.userData = { type: "icon", text: paths[name] };
     scene.add(plane);
     addIconText(xPos, name);
   }

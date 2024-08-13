@@ -13,6 +13,6 @@ export function aboutPage(scene) {
   });
   const plane = new THREE.Mesh(planeGeometry, planeMaterial);
   plane.position.set(5, 15, 8.9);
-  plane.userData = { type: "icon", text: name };
+  plane.userData = { type: "image", text: "Artie Humphreys Portrait" };
   scene.add(plane);
 }

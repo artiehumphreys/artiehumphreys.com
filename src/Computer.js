@@ -3,6 +3,8 @@ import { setupLights } from "./lights.js";
 import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
+import { aboutPage } from "./pages/about.js";
+import { hideIcons } from "./pages/home.js";
 
 export function computer(path) {
   const raycaster = new THREE.Raycaster();
@@ -47,6 +49,9 @@ export function computer(path) {
   function loadPage() {
     switch (path) {
       case "/about":
+        console.log("Loading About Page");
+        hideIcons(scene);
+        aboutPage(scene);
         break;
       case "/projects":
         break;

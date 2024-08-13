@@ -1,4 +1,5 @@
 import { computer } from "./Computer.js";
+import { route } from "./utils/router.js";
 
 function webgl_support() {
   //https://stackoverflow.com/questions/11871077/proper-way-to-detect-webgl-support
@@ -14,9 +15,9 @@ function webgl_support() {
   }
 }
 document.addEventListener("DOMContentLoaded", () => {
-  const path = window.location.pathname;
+  route();
   webgl_support()
-    ? computer(path)
+    ? computer()
     : console.error(
         "WebGL is not supported on your browser. Please visit https://get.webgl.org/webgl2/ for more."
       );

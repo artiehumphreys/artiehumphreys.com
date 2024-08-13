@@ -1,4 +1,5 @@
-import { hideIcons } from "./pages/home.js";
+import { route } from "./utils/router.js";
+
 export function handleIconClickEvents(scene, camera, raycaster, mouse) {
   return function (event) {
     event.preventDefault();
@@ -9,8 +10,8 @@ export function handleIconClickEvents(scene, camera, raycaster, mouse) {
     if (intersects.length > 0) {
       const intersectedObject = intersects[0].object;
       if (intersectedObject.userData.type === "icon") {
-        console.log(`Icon clicked: ${intersectedObject.userData.text}`);
-        hideIcons(scene);
+        const targetPath = `/${intersectedObject.userData.text.toLowerCase()}`;
+        route().navigate(targetPath);
       }
     }
   };
