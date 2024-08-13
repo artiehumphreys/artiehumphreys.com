@@ -46,13 +46,17 @@ export function computer() {
   return { scene, camera, renderer };
 }
 
+let prevRoute = "";
 export function renderPage(scene, camera, renderer, route) {
-  console.log(route);
+  if (route === prevRoute) {
+    return;
+  }
+  prevRoute = route;
   switch (route) {
     case "/about":
       hideIcons(scene);
-      aboutPage(scene);
       renderer.render(scene, camera);
+      aboutPage(scene);
       break;
     case "/projects":
       break;
