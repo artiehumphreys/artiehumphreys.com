@@ -1,4 +1,4 @@
-import { hideIcons } from "./icons.js";
+import { hideIcons } from "./pages/home.js";
 export function handleIconClickEvents(scene, camera, raycaster, mouse) {
   return function (event) {
     event.preventDefault();

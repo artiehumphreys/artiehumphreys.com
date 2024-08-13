@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { TextGeometry } from "TextGeometry";
 import { FontLoader } from "FontLoader";
-import { curvePlanes } from "./utils/geometryUtils.js";
+import { curvePlanes } from "../utils/geometryUtils.js";
 
 const yPos = 42;
 const zPos = 8.85;

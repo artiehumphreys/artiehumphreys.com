@@ -45,7 +45,6 @@ export function computer(path) {
   );
 
   function loadPage() {
-    console.log(path);
     switch (path) {
       case "/about":
         break;
