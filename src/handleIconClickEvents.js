@@ -9,7 +9,8 @@ export function handleIconClickEvents(scene, camera, raycaster, mouse) {
     const intersects = raycaster.intersectObjects(scene.children, true);
     if (intersects.length > 0) {
       const intersectedObject = intersects[0].object;
-      if (intersectedObject.userData.type === "icon") {
+      const path = window.location.hash;
+      if (intersectedObject.userData.type === "icon" && path == "") {
         const targetPath = `/${intersectedObject.userData.text.toLowerCase()}`;
         route().navigate(targetPath);
       }

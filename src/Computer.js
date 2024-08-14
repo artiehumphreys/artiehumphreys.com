@@ -55,7 +55,6 @@ export function renderPage(scene, camera, renderer, route) {
   switch (route) {
     case "/about":
       hideIcons(scene);
-      renderer.render(scene, camera);
       aboutPage(scene);
       break;
     case "/projects":

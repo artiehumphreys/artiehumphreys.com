@@ -1,7 +1,16 @@
 import { computer, renderPage } from "../Computer.js";
 
+let isModelLoaded = false;
+let scene, camera, renderer;
+
 export function route() {
-  const { scene, camera, renderer } = computer();
+  if (!isModelLoaded) {
+    const result = computer();
+    scene = result.scene;
+    camera = result.camera;
+    renderer = result.renderer;
+    isModelLoaded = true;
+  }
 
   // eslint-disable-next-line no-undef
   const router = new Navigo("/", { hash: true });

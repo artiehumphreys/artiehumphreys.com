@@ -1,4 +1,3 @@
-import { computer } from "./Computer.js";
 import { route } from "./utils/router.js";
 
 function webgl_support() {
@@ -16,9 +15,9 @@ function webgl_support() {
 }
 document.addEventListener("DOMContentLoaded", () => {
   route();
-  webgl_support()
-    ? computer()
-    : console.error(
-        "WebGL is not supported on your browser. Please visit https://get.webgl.org/webgl2/ for more."
-      );
+  if (!webgl_support()) {
+    console.error(
+      "WebGL is not supported on your browser. Please visit https://get.webgl.org/webgl2/ for more."
+    );
+  }
 });
