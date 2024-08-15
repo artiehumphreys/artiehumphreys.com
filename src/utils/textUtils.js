@@ -28,7 +28,7 @@ export async function addText(scene, xPos, yPos, zPos, name) {
   const textWidth =
     textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
   textMesh.position.set(xPos - textWidth / 2, yPos - 2, zPos * 2 - 5);
-  textMesh.userData = { type: "text" };
+  textMesh.userData = { type: "text", text: name };
 
   curveText(textGeometry, xPos - textWidth / 2, yPos - 2);
 

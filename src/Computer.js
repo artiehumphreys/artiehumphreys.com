@@ -4,7 +4,7 @@ import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
 import { aboutPage, hideAboutPage } from "./pages/about.js";
-import { hideIcons, createIcons } from "./pages/home.js";
+import { hideHomePage, createIcons } from "./pages/home.js";
 
 export function computer() {
   const scene = new THREE.Scene();
@@ -46,15 +46,30 @@ export function computer() {
   return { scene, camera, renderer };
 }
 
-let prevRoute = "";
+let prevRoute = null;
+let doAnimation = true;
 export function renderPage(scene, camera, renderer, route) {
   if (route === prevRoute) {
     return;
   }
   prevRoute = route;
+
+  switch (prevRoute) {
+    case "/about":
+      hideAboutPage(scene);
+      break;
+    case "/projects":
+      break;
+    case "/experience":
+      break;
+    default:
+      hideHomePage(scene);
+      break;
+  }
+
   switch (route) {
     case "/about":
-      hideIcons(scene);
+      hideHomePage(scene);
       aboutPage(scene);
       break;
     case "/projects":
@@ -64,17 +79,22 @@ export function renderPage(scene, camera, renderer, route) {
     default: {
       hideAboutPage(scene);
       createIcons(scene);
-      camera.position.set(0, 50, 100);
-      camera.rotation.set(-0.5, 0, 0);
-      animateCamera(camera);
-
-      animate();
+      if (doAnimation === true) {
+        camera.position.set(0, 50, 100);
+        camera.rotation.set(-0.5, 0, 0);
+        animateCamera(camera);
+        setTimeout(() => {
+          doAnimation = false;
+        }, 2000);
+      }
       break;
     }
   }
   function animate(time) {
     requestAnimationFrame(animate);
-    TWEEN.update(time);
+    if (doAnimation === true) {
+      TWEEN.update(time);
+    }
     renderer.render(scene, camera);
   }
   animate();

@@ -8,22 +8,25 @@ export async function aboutPage(scene) {
 
   const plane = createImage(texture);
 
-  scene.add(plane);
-  await addText(
-    scene,
-    6,
-    56.5,
-    8.7,
-    "Hi, I'm Artie Humphreys, a third-year student at the University \nof Virginia, pursuing a double major in Computer Science \nand Mathematics. I'm passionate about leveraging computer \nscience to drive innovation and create meaningful solutions \nacross different fields, including finance, sports science, \nand business consulting."
-  );
+  await Promise.all([
+    addText(
+      scene,
+      6,
+      56.5,
+      8.7,
+      "Hi, I'm Artie Humphreys, a third-year student at the University \nof Virginia, pursuing a double major in Computer Science \nand Mathematics. I'm passionate about leveraging computer \nscience to drive innovation and create meaningful solutions \nacross different fields, including finance, sports science, \nand business consulting."
+    ),
 
-  await addText(
-    scene,
-    5.4,
-    45,
-    8.7,
-    "With several years of experience developing enterprise-scale \nsoftware, I’ve worked with a wide array of technologies and \nframeworks. I'm a curious learner, always eager to dive into \ncutting-edge innovations and explore new tools."
-  );
+    addText(
+      scene,
+      5.4,
+      45,
+      8.7,
+      "With several years of experience developing enterprise-scale \nsoftware, I’ve worked with a wide array of technologies and \nframeworks. I'm a curious learner, always eager to dive into \ncutting-edge innovations and explore new tools."
+    ),
+  ]);
+
+  scene.add(plane);
 
   function createImage(texture) {
     const xOffset = -15.25;
@@ -48,17 +51,12 @@ export async function aboutPage(scene) {
 export function hideAboutPage(scene) {
   const objectsToRemove = [];
   console.log(scene.children);
-  try {
-    scene.children.forEach((child) => {
-      if (["image", "text"].includes(child.userData.type)) {
-        objectsToRemove.push(child);
-      }
-      console.log(objectsToRemove);
-      objectsToRemove.forEach((object) => {
-        scene.remove(object);
-      });
+  scene.children.forEach((child) => {
+    if (["image", "text"].includes(child.userData.type)) {
+      objectsToRemove.push(child);
+    }
+    objectsToRemove.forEach((object) => {
+      scene.remove(object);
     });
-  } catch {
-    return;
-  }
+  });
 }

@@ -36,7 +36,7 @@ export function createIcons(scene) {
   }
 }
 
-export function hideIcons(scene) {
+export function hideHomePage(scene) {
   const objectsToRemove = [];
   scene.children.forEach((child) => {
     if (["icon", "text"].includes(child.userData.type)) {
