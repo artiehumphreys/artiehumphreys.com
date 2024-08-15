@@ -3,7 +3,7 @@ import { setupLights } from "./lights.js";
 import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
-import { aboutPage } from "./pages/about.js";
+import { aboutPage, hideAboutPage } from "./pages/about.js";
 import { hideIcons, createIcons } from "./pages/home.js";
 
 export function computer() {
@@ -62,6 +62,7 @@ export function renderPage(scene, camera, renderer, route) {
     case "/experience":
       break;
     default: {
+      hideAboutPage(scene);
       createIcons(scene);
       camera.position.set(0, 50, 100);
       camera.rotation.set(-0.5, 0, 0);

@@ -11,14 +11,19 @@ export async function aboutPage(scene) {
   scene.add(plane);
   await addText(
     scene,
-    4,
-    54.25,
-    10.5,
-    "My Name is Artie Humphreys, I'm a third-year \nstudent at the Univeristy of Virginia, double-\nmajoring in Computer Science and Mathematics.\
-    \n\n\nI'm extremely passionate about the applications \nof computer science within different fields, such \nas finance, sports science, and machine learning."
+    6,
+    56.5,
+    8.7,
+    "Hi, I'm Artie Humphreys, a third-year student at the University \nof Virginia, pursuing a double major in Computer Science \nand Mathematics. I'm passionate about leveraging computer \nscience to drive innovation and create meaningful solutions \nacross different fields, including finance, sports science, \nand business consulting."
   );
 
-  console.log(scene.children);
+  await addText(
+    scene,
+    5.4,
+    45,
+    8.7,
+    "With several years of experience developing enterprise-scale \nsoftware, I’ve worked with a wide array of technologies and \nframeworks. I'm a curious learner, always eager to dive into \ncutting-edge innovations and explore new tools."
+  );
 
   function createImage(texture) {
     const xOffset = -15.25;
@@ -28,7 +33,7 @@ export async function aboutPage(scene) {
     const planeMaterial = new THREE.MeshStandardMaterial({
       map: texture,
       roughness: 1,
-      metalness: 0,
+      metalness: 0.2,
       emissiveIntensity: 0.5,
       transparent: true,
     });
@@ -37,5 +42,23 @@ export async function aboutPage(scene) {
     plane.position.set(xOffset, yOffset, 10.5);
     plane.userData = { type: "image", text: "Artie Humphreys Portrait" };
     return plane;
+  }
+}
+
+export function hideAboutPage(scene) {
+  const objectsToRemove = [];
+  console.log(scene.children);
+  try {
+    scene.children.forEach((child) => {
+      if (["image", "text"].includes(child.userData.type)) {
+        objectsToRemove.push(child);
+      }
+      console.log(objectsToRemove);
+      objectsToRemove.forEach((object) => {
+        scene.remove(object);
+      });
+    });
+  } catch {
+    return;
   }
 }
