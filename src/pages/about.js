@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { curvePlanes } from "../utils/geometryUtils.js";
 import { loadPortraitTexture } from "../utils/textureLoader.js";
-import { addText } from "./home.js";
+import { addText } from "../utils/textUtils.js";
 
 export function aboutPage(scene) {
   const texture = loadPortraitTexture();
