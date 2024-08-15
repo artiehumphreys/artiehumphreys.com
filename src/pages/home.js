@@ -22,7 +22,7 @@ export function createIcons(scene) {
   createCenteredIcon(textures.projectTexture, -5, "Projects");
 
   function createCenteredIcon(texture, xPos, name) {
-    const planeGeometry = curvePlanes(12.5, 8.5);
+    const planeGeometry = curvePlanes(12.5, 8.5, xPos, yPos);
     const planeMaterial = new THREE.MeshStandardMaterial({
       map: texture,
       roughness: 0.1,
@@ -30,7 +30,7 @@ export function createIcons(scene) {
       transparent: true,
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.position.set(xPos, yPos + 2, zPos + 0.05);
+    plane.position.set(xPos, yPos + 2, zPos + 1.5);
     plane.userData = { type: "icon", text: paths[name] };
     scene.add(plane);
     addText(scene, xPos, yPos, zPos, name);
