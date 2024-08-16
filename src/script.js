@@ -22,17 +22,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-document.addEventListener(
-  "wheel",
-  (event) => {
-    event.preventDefault();
-    handleScroll(event.deltaY);
-  },
-  { passive: false }
-);
+// document.addEventListener(
+//   "wheel",
+//   (event) => {
+//     event.preventDefault();
+//     handleScroll(event.deltaY);
+//   },
+//   { passive: false }
+// );
 
-function handleScroll(delta) {
-  if (window.location.hash === "#/about") {
-    console.log("hi", delta);
-  }
-}
+// function handleScroll(delta) {
+//   if (window.location.hash === "#/about") {
+//     console.log("hi", delta);
+//   }
+// }

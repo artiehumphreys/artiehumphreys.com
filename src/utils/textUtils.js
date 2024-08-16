@@ -3,7 +3,7 @@ import { TextGeometry } from "TextGeometry";
 import { FontLoader } from "FontLoader";
 import { curveText } from "./geometryUtils.js";
 
-export async function addText(scene, xPos, yPos, zPos, name) {
+export async function addText(xPos, yPos, zPos, name) {
   const fontLoader = new FontLoader();
   const font = await new Promise((resolve, reject) => {
     fontLoader.load(
@@ -13,6 +13,7 @@ export async function addText(scene, xPos, yPos, zPos, name) {
       reject
     );
   });
+
   const textGeometry = new TextGeometry(name, {
     font: font,
     depth: 0.1,
@@ -20,9 +21,11 @@ export async function addText(scene, xPos, yPos, zPos, name) {
     curveSegments: 12,
     bevelEnabled: false,
   });
+
   const textMaterial = new THREE.MeshStandardMaterial({
     color: 0xffffff,
   });
+
   const textMesh = new THREE.Mesh(textGeometry, textMaterial);
   textGeometry.computeBoundingBox();
   const textWidth =
@@ -32,5 +35,5 @@ export async function addText(scene, xPos, yPos, zPos, name) {
 
   curveText(textGeometry, xPos - textWidth / 2, yPos - 2);
 
-  scene.add(textMesh);
+  return textMesh;
 }

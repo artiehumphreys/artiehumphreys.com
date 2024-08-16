@@ -8,17 +8,14 @@ export async function aboutPage(scene) {
 
   const plane = createImage(texture);
 
-  await Promise.all([
+  const [paragraph1, paragraph2] = await Promise.all([
     addText(
-      scene,
       6,
       56.5,
       8.7,
       "Hi, I'm Artie Humphreys, a third-year student at the University \nof Virginia, pursuing a double major in Computer Science \nand Mathematics. I'm passionate about leveraging computer \nscience to drive innovation and create meaningful solutions \nacross different fields, including finance, sports science, \nand business consulting."
     ),
-
     addText(
-      scene,
       5.4,
       45,
       8.7,
@@ -27,6 +24,17 @@ export async function aboutPage(scene) {
   ]);
 
   scene.add(plane);
+  scene.add(paragraph1);
+  scene.add(paragraph2);
+
+  function handleScroll(event) {
+    const scrollY = event.scrollY;
+    plane.position.y = 48 + scrollY;
+    paragraph1.position.y = 56.5 + scrollY;
+    paragraph2.position.y = 45 + scrollY;
+  }
+
+  window.addEventListener("scroll", handleScroll);
 
   function createImage(texture) {
     const xOffset = -15.25;
