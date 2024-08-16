@@ -50,7 +50,6 @@ export async function aboutPage(scene) {
 
 export function hideAboutPage(scene) {
   const objectsToRemove = [];
-  console.log(scene.children);
   scene.children.forEach((child) => {
     if (["image", "text"].includes(child.userData.type)) {
       objectsToRemove.push(child);
