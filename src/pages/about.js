@@ -40,8 +40,10 @@ export async function aboutPage(scene) {
     textData.map(({ position, content }) => addText(...position, content))
   );
 
-  scene.add(plane);
-  paragraphs.forEach((paragraph) => scene.add(paragraph));
+  const scrollBar = createScrollbar();
+  [...scrollBar, ...paragraphs, plane].forEach((item) => {
+    scene.add(item);
+  });
 
   function handleScroll(delta) {
     delta > 0 ? (delta = Math.min(delta, 10)) : (delta = Math.max(delta, -10));
@@ -53,6 +55,24 @@ export async function aboutPage(scene) {
       item.position.y += delta;
       item.position.z -= delta / 26;
     });
+  }
+
+  function createScrollbar() {
+    const trackHeight = 20;
+    const thumbHeight = 4;
+
+    const trackGeometry = new THREE.BoxGeometry(0.5, trackHeight, 0.2);
+    const trackMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+    const track = new THREE.Mesh(trackGeometry, trackMaterial);
+    track.position.set(21, 43, 17.5);
+
+    const thumbGeometry = new THREE.BoxGeometry(0.5, thumbHeight, 0.2);
+    const thumbMaterial = new THREE.MeshBasicMaterial({ color: 0x444444 });
+    const thumb = new THREE.Mesh(thumbGeometry, thumbMaterial);
+    thumb.position.set(21, 51, 17.5);
+    scene.add(thumb);
+
+    return [track, thumb];
   }
 
   document.addEventListener(
