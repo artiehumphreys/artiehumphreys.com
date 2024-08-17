@@ -28,7 +28,8 @@ export async function aboutPage(scene) {
   scene.add(paragraph2);
 
   function handleScroll(delta) {
-    delta = Math.floor(delta / 2);
+    delta > 0 ? (delta = Math.min(delta, 10)) : (delta = Math.max(delta, -10));
+    delta = delta / 5;
     console.log(delta);
     [plane, paragraph1, paragraph2].forEach((item) => {
       item.position.y += delta;
