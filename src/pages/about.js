@@ -27,14 +27,23 @@ export async function aboutPage(scene) {
   scene.add(paragraph1);
   scene.add(paragraph2);
 
-  function handleScroll(event) {
-    const scrollY = event.scrollY;
-    plane.position.y = 48 + scrollY;
-    paragraph1.position.y = 56.5 + scrollY;
-    paragraph2.position.y = 45 + scrollY;
+  function handleScroll(delta) {
+    delta = Math.floor(delta / 2);
+    console.log(delta);
+    [plane, paragraph1, paragraph2].forEach((item) => {
+      item.position.y += delta;
+      item.position.z -= delta / 26;
+    });
   }
 
-  window.addEventListener("scroll", handleScroll);
+  document.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      handleScroll(event.deltaY);
+    },
+    { passive: false }
+  );
 
   function createImage(texture) {
     const xOffset = -15.25;
@@ -50,7 +59,7 @@ export async function aboutPage(scene) {
     });
 
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.position.set(xOffset, yOffset, 10.5);
+    plane.position.set(xOffset, yOffset, 10.4);
     plane.userData = { type: "image", text: "Artie Humphreys Portrait" };
     return plane;
   }

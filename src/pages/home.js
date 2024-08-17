@@ -32,7 +32,8 @@ export function createIcons(scene) {
     plane.position.set(xPos, yPos + 2, zPos + 1.5);
     plane.userData = { type: "icon", text: paths[name] };
     scene.add(plane);
-    await addText(scene, xPos, yPos, zPos, name);
+    const iconText = await addText(xPos, yPos, zPos, name);
+    scene.add(iconText);
   }
 }
 
