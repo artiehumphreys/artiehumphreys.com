@@ -46,7 +46,7 @@ export async function aboutPage(scene) {
   function handleScroll(delta) {
     delta > 0 ? (delta = Math.min(delta, 10)) : (delta = Math.max(delta, -10));
     delta = delta / 5;
-    if (plane.position.y + delta < 45) {
+    if (plane.position.y + delta < 45 || plane.position.y + delta > 82) {
       return;
     }
     [plane, ...paragraphs].forEach((item) => {
