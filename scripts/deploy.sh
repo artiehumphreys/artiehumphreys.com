@@ -1,6 +1,6 @@
 #!/bin/bash
 
-aws s3 sync . s3://artiehumphreys.com --delete \
+aws s3 sync . s3://artiehumphreys.com \
     --exclude ".git/*" \
     --exclude ".github/*" \
     --exclude "README.md" \
