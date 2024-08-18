@@ -12,7 +12,7 @@ export async function aboutPage(scene) {
     {
       position: [6, 53.5, 8.7],
       content:
-        "Hi, I'm Artie Humphreys, a third-year student at the University \nof Virginia, pursuing a double major in Computer Science \nand Mathematics. I'm passionate about leveraging computer \nscience to drive innovation and create meaningful solutions \nacross different fields, including finance, sports science, \nand business consulting.",
+        "Hi, I'm Artie Humphreys, a third-year student at the University \nof Virginia, double-majoring in Computer Science and \nMathematics. I'm passionate about using computer science \nto drive innovation and create solutions in different fields, \nsuch as finance, sports science, and business consulting.",
     },
     {
       position: [5.4, 42, 8.7],
@@ -58,18 +58,22 @@ export async function aboutPage(scene) {
   }
 
   function createScrollbar() {
-    const trackHeight = 20;
+    const trackHeight = 12;
     const thumbHeight = 4;
+    const xPos = 14.5;
+    const yPos = 43.25;
+    const zPos = 17.5;
 
-    const trackGeometry = new THREE.BoxGeometry(0.5, trackHeight, 0.2);
+    const trackGeometry = curvePlanes(0.5, trackHeight, xPos, yPos);
     const trackMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
     const track = new THREE.Mesh(trackGeometry, trackMaterial);
-    track.position.set(21, 43, 17.5);
+    track.position.set(xPos, yPos, zPos);
+    scene.add(track);
 
-    const thumbGeometry = new THREE.BoxGeometry(0.5, thumbHeight, 0.2);
+    const thumbGeometry = curvePlanes(0.5, thumbHeight, xPos, yPos);
     const thumbMaterial = new THREE.MeshBasicMaterial({ color: 0x444444 });
     const thumb = new THREE.Mesh(thumbGeometry, thumbMaterial);
-    thumb.position.set(21, 51, 17.5);
+    thumb.position.set(xPos - 0.15, yPos + thumbHeight, zPos + 0.01);
     scene.add(thumb);
 
     return [track, thumb];
