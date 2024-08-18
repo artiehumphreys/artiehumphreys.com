@@ -3,10 +3,12 @@ import * as THREE from "three";
 const textureLoader = new THREE.TextureLoader();
 
 export function loadIconTextures() {
-  const aboutMeTexture = textureLoader.load("../../models/aboutme.png");
-  const contactTexture = textureLoader.load("../../models/contact.png");
-  const experienceTexture = textureLoader.load("../../models/experience.png");
-  const projectTexture = textureLoader.load("../../models/projects.png");
+  const aboutMeTexture = textureLoader.load("../../public/icons/aboutme.png");
+  const contactTexture = textureLoader.load("../../public/icons/contact.png");
+  const experienceTexture = textureLoader.load(
+    "../../public/icons/experience.png"
+  );
+  const projectTexture = textureLoader.load("../../public/icons/projects.png");
 
   return {
     aboutMeTexture,
@@ -17,5 +19,9 @@ export function loadIconTextures() {
 }
 
 export function loadScreenTexture() {
-  return textureLoader.load("../../models/background.jpg");
+  return textureLoader.load("../../public/background.jpg");
+}
+
+export function loadPortraitTexture() {
+  return textureLoader.load("../../public/artiehumphreys.jpg");
 }

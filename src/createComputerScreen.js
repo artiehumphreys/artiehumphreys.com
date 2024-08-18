@@ -1,10 +1,12 @@
 import * as THREE from "three";
 import { curvePlanes } from "./utils/geometryUtils.js";
+import { loadScreenTexture } from "./utils/textureLoader.js";
 
 const yPos = 42;
 const zPos = 8.8;
 
-export function createComputerScreen(scene, model, screenTexture) {
+export function createComputerScreen(scene, model) {
+  const texture = loadScreenTexture();
   model.traverse(function (node) {
     if (node.isMesh && node.name === "defaultMaterial") {
       const width = 50;
@@ -12,7 +14,7 @@ export function createComputerScreen(scene, model, screenTexture) {
       const screenGeometry = curvePlanes(width, height);
 
       const screenMaterial = new THREE.MeshStandardMaterial({
-        map: screenTexture,
+        map: texture,
         roughness: 0.2,
         metalness: 0.0,
         emissive: new THREE.Color(0x444444),

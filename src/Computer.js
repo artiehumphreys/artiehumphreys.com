@@ -1,24 +1,22 @@
-/* eslint-disable no-undef */
 import * as THREE from "three";
 import { setupLights } from "./lights.js";
 import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
+import { aboutPage, hideAboutPage } from "./pages/about.js";
+import { hideHomePage, createIcons } from "./pages/home.js";
 
 export function computer() {
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-
   const scene = new THREE.Scene();
-
   const camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
     0.1,
     1000
   );
-  camera.position.set(0, 50, 100);
-  camera.rotation.set(-0.5, 0, 0);
+
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
 
   const canvas = document.getElementById("canvas");
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -29,17 +27,9 @@ export function computer() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   setupLights(scene);
-
   loadModel(scene);
 
-  animateCamera(camera);
-
-  function animate(time) {
-    requestAnimationFrame(animate);
-    TWEEN.update(time);
-    renderer.render(scene, camera);
-  }
-  animate();
+  camera.position.set(0, 43, 38);
 
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -52,4 +42,60 @@ export function computer() {
     handleIconClickEvents(scene, camera, raycaster, mouse),
     false
   );
+
+  return { scene, camera, renderer };
+}
+
+let prevRoute = null;
+let doAnimation = true;
+export function renderPage(scene, camera, renderer, route) {
+  if (route === prevRoute) {
+    return;
+  }
+  prevRoute = route;
+
+  switch (prevRoute) {
+    case "/about":
+      hideAboutPage(scene);
+      break;
+    case "/projects":
+      break;
+    case "/experience":
+      break;
+    default:
+      hideHomePage(scene);
+      break;
+  }
+
+  switch (route) {
+    case "/about":
+      hideHomePage(scene);
+      aboutPage(scene);
+      break;
+    case "/projects":
+      break;
+    case "/experience":
+      break;
+    default: {
+      hideAboutPage(scene);
+      createIcons(scene);
+      if (doAnimation === true) {
+        camera.position.set(0, 50, 100);
+        camera.rotation.set(-0.5, 0, 0);
+        animateCamera(camera);
+        setTimeout(() => {
+          doAnimation = false;
+        }, 2000);
+      }
+      break;
+    }
+  }
+  function animate(time) {
+    requestAnimationFrame(animate);
+    if (doAnimation === true) {
+      TWEEN.update(time);
+    }
+    renderer.render(scene, camera);
+  }
+  animate();
 }
