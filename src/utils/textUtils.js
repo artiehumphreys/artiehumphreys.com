@@ -3,7 +3,7 @@ import { TextGeometry } from "TextGeometry";
 import { FontLoader } from "FontLoader";
 import { curveText } from "./geometryUtils.js";
 
-export async function addText(xPos, yPos, zPos, name) {
+export async function addText(xPos, yPos, zPos, name, size = 0.75) {
   const fontLoader = new FontLoader();
   const font = await new Promise((resolve, reject) => {
     fontLoader.load(
@@ -17,7 +17,7 @@ export async function addText(xPos, yPos, zPos, name) {
   const textGeometry = new TextGeometry(name, {
     font: font,
     depth: 0.1,
-    size: 0.75,
+    size: size,
     curveSegments: 12,
     bevelEnabled: false,
   });
