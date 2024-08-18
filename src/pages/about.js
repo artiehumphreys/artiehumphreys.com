@@ -28,7 +28,7 @@ export async function aboutPage(scene) {
     {
       position: [5.45, 40.8, 8.7],
       content:
-        "I have a deep passion for sports, especially basketball, which led me to \njoin the UVA Men's Basketball Team as a Student Manager. In my free \ntime, I enjoy reading and build side projects.",
+        "I have a deep passion for sports, especially basketball, which led me to \njoin the UVA Men's Basketball Team as a Student Manager. In my free \ntime, I enjoy reading and building side projects.",
     },
     { position: [-8, 35.5, 8.7], content: "Skills" },
     {
@@ -56,15 +56,12 @@ export async function aboutPage(scene) {
   function createImage(texture) {
     const xOffset = -17.2;
     const yOffset = 42.3;
-    // const yOffset = 46;
 
     const planeGeometry = curvePlanes(12, 14, xOffset, yOffset);
     const planeMaterial = new THREE.MeshStandardMaterial({
       map: texture,
-      roughness: 1,
-      metalness: 0.2,
-      emissiveIntensity: 0.5,
-      transparent: true,
+      roughness: 0.8,
+      metalness: 0.4,
     });
 
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
