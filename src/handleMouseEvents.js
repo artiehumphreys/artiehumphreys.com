@@ -15,10 +15,8 @@ export function handleClickEvents(scene, camera, raycaster, mouse) {
           ["redirect", "icon"].includes(intersect.object.userData.type)
         );
       });
-    console.log(intersects);
     if (intersects.length > 0) {
       const intersectedObject = intersects[0].object;
-      console.log(intersects);
       if (intersectedObject.userData.type === "icon" && path == "") {
         const targetPath = `/${intersectedObject.userData.text.toLowerCase()}`;
         route().navigate(targetPath);
