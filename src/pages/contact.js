@@ -3,14 +3,28 @@ import { loadContactTextures } from "../utils/textureLoader.js";
 import { curvePlanes } from "../utils/geometryUtils.js";
 import { addText } from "../utils/textUtils.js";
 
-export function contactPage(scene) {
-  const xPos = -3;
+export async function contactPage(scene) {
+  const xPos = -12;
   const zPos = 8.7;
   const textures = loadContactTextures();
-  createIcon(textures.linkedinTexture, 45, "LinkedIn");
+  await createIcon(textures.emailTexture, 38, "artieh2003@gmail.com", 8, 7.5);
+  await createIcon(
+    textures.githubTexture,
+    44,
+    "github.com/artiehumphreys",
+    5,
+    4.75
+  );
+  await createIcon(
+    textures.linkedinTexture,
+    50,
+    "linkedin.com/artiehumphreys",
+    4.5,
+    4.25
+  );
 
-  async function createIcon(texture, yPos, name) {
-    const planeGeometry = curvePlanes(12.5, 8.5, xPos, yPos);
+  async function createIcon(texture, yPos, name, width, height) {
+    const planeGeometry = curvePlanes(width, height, xPos, yPos);
     const planeMaterial = new THREE.MeshStandardMaterial({
       map: texture,
       roughness: 0.1,
@@ -18,16 +32,19 @@ export function contactPage(scene) {
       transparent: true,
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.position.set(xPos, yPos + 2, zPos + 1.5);
+    plane.position.set(xPos, yPos, zPos + 2);
     plane.userData = { type: "icon", text: name };
-    const iconText = await createIconText(xPos, yPos, name);
+    const iconText = await createIconText(
+      name === "artieh2003@gmail.com" ? xPos + 12.35 : xPos + 12.5,
+      yPos + 1.5,
+      name
+    );
     scene.add(plane);
     scene.add(iconText);
   }
 
   async function createIconText(xPos, yPos, name) {
-    const offset = 2;
-    const iconText = await addText(xPos + offset, yPos, zPos, name);
+    const iconText = await addText(xPos + 2, yPos, zPos, name, 1);
     return iconText;
   }
 }

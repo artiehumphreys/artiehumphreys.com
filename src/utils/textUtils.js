@@ -27,11 +27,14 @@ export async function addText(xPos, yPos, zPos, name, size = 0.75) {
   });
 
   const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+  textMesh.name = name;
+  textMesh.userData = { type: "text", text: name };
+
   textGeometry.computeBoundingBox();
+  textGeometry.boundingBox.expandByScalar(2);
   const textWidth =
     textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
   textMesh.position.set(xPos - textWidth / 2, yPos - 2, zPos * 2 - 5);
-  textMesh.userData = { type: "text", text: name };
 
   curveText(textGeometry, xPos - textWidth / 2, yPos - 2);
 
