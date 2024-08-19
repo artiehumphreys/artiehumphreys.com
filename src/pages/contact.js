@@ -4,7 +4,7 @@ import { curvePlanes } from "../utils/geometryUtils.js";
 import { addText } from "../utils/textUtils.js";
 
 export async function contactPage(scene) {
-  const xPos = -12.35;
+  const xPos = -11;
   const zPos = 8.7;
   const textures = loadContactTextures();
   const header = await addText(0, 56.5, 8.7, "Contact", 2);
