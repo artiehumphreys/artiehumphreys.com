@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 const textureLoader = new THREE.TextureLoader();
 
-export function loadIconTextures() {
+export function loadSectionTextures() {
   const aboutMeTexture = textureLoader.load("../../public/icons/aboutme.png");
   const contactTexture = textureLoader.load("../../public/icons/contact.png");
   const experienceTexture = textureLoader.load(
@@ -15,6 +15,18 @@ export function loadIconTextures() {
     contactTexture,
     experienceTexture,
     projectTexture,
+  };
+}
+
+export function loadContactTextures() {
+  const emailTexture = textureLoader.load("../../public/icons/email.png");
+  const linkedinTexture = textureLoader.load("../../public/icons/linkedin.png");
+  const githubTexture = textureLoader.load("../../public/icons/github.png");
+
+  return {
+    emailTexture,
+    linkedinTexture,
+    githubTexture,
   };
 }
 

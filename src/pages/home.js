@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { curvePlanes } from "../utils/geometryUtils.js";
-import { loadIconTextures } from "../utils/textureLoader.js";
+import { loadSectionTextures } from "../utils/textureLoader.js";
 import { addText } from "../utils/textUtils.js";
 
 const yPos = 42;
@@ -13,7 +13,7 @@ const paths = {
 };
 
 export function createIcons(scene) {
-  const textures = loadIconTextures();
+  const textures = loadSectionTextures();
 
   createCenteredIcon(textures.aboutMeTexture, -15, "About Me");
   createCenteredIcon(textures.contactTexture, 15, "Contact");
