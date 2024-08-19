@@ -7,6 +7,7 @@ export async function contactPage(scene) {
   const xPos = -12.35;
   const zPos = 8.7;
   const textures = loadContactTextures();
+  const header = await addText(0, 56.5, 8.7, "Contact", 2);
   await createIcon(textures.emailTexture, 38, "artieh2003@gmail.com", 8, 7.5);
   await createIcon(
     textures.githubTexture,
@@ -36,16 +37,17 @@ export async function contactPage(scene) {
     plane.userData = { type: "icon", text: name };
     const iconText = await createIconText(
       name === "github.com/artiehumphreys"
-        ? xPos + 13.5
+        ? xPos + 12.2
         : name === "artieh2003@gmail.com"
-        ? xPos + 11.9
-        : xPos + 15,
-      yPos + 1.5,
+        ? xPos + 10.5
+        : xPos + 13.5,
+      yPos + 1.6,
       name
     );
     const clickArea = createClickArea(iconText, name);
 
     scene.add(plane);
+    scene.add(header);
     scene.add(iconText);
     scene.add(clickArea);
   }
@@ -60,6 +62,9 @@ export async function contactPage(scene) {
     const size = new THREE.Vector3();
     boundingBox.getSize(size);
 
+    const center = new THREE.Vector3();
+    boundingBox.getCenter(center);
+
     const clickGeometry = new THREE.PlaneGeometry(size.x, size.y);
     const clickMaterial = new THREE.MeshBasicMaterial({
       transparent: true,
@@ -68,11 +73,13 @@ export async function contactPage(scene) {
 
     const clickMesh = new THREE.Mesh(clickGeometry, clickMaterial);
 
-    clickMesh.position.set(
-      textMesh.position.x,
-      textMesh.position.y,
-      textMesh.position.z + 0.1
-    );
+    const offsets = {
+      "artieh2003@gmail.com": -0.75,
+      "linkedin.com/in/artiehumphreys": 1.5,
+      "github.com/artiehumphreys": 0.5,
+    };
+
+    clickMesh.position.set(center.x, center.y + offsets[name], center.z + 0.1);
 
     clickMesh.userData = { type: "redirect", text: name };
 
