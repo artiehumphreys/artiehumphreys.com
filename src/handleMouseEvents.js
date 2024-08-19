@@ -1,6 +1,6 @@
 import { route } from "./utils/router.js";
 
-export function handleIconClickEvents(scene, camera, raycaster, mouse) {
+export function handleClickEvents(scene, camera, raycaster, mouse) {
   return function (event) {
     event.preventDefault();
     const path = window.location.hash;
@@ -12,7 +12,7 @@ export function handleIconClickEvents(scene, camera, raycaster, mouse) {
       .filter((intersect) => {
         return (
           intersect.object.userData &&
-          ["text", "icon"].includes(intersect.object.userData.type)
+          ["redirect", "icon"].includes(intersect.object.userData.type)
         );
       });
     console.log(intersects);
@@ -24,10 +24,15 @@ export function handleIconClickEvents(scene, camera, raycaster, mouse) {
         route().navigate(targetPath);
       } else if (
         path === "#/contact" &&
-        intersectedObject.userData.type === "text"
+        intersectedObject.userData.type === "redirect"
       ) {
         const targetPath = `/${intersectedObject.userData.text.toLowerCase()}`;
-        const newTab = window.open(targetPath, "_blank");
+        const newTab = window.open(
+          "@".includes(targetPath)
+            ? `mailto:${targetPath}`
+            : `https://${targetPath}`,
+          "_blank"
+        );
         if (newTab) {
           newTab.focus();
         } else {
@@ -35,5 +40,24 @@ export function handleIconClickEvents(scene, camera, raycaster, mouse) {
         }
       }
     }
+  };
+}
+
+export function handleHoverEvents(scene, camera, raycaster, mouse) {
+  return function (event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    let hovering = false;
+    intersects.forEach((intersect) => {
+      if (intersect.object.userData.type === "redirect") {
+        hovering = true;
+      }
+    });
+
+    document.body.style.cursor = hovering ? "pointer" : "default";
   };
 }
