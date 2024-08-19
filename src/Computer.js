@@ -2,9 +2,10 @@ import * as THREE from "three";
 import { setupLights } from "./lights.js";
 import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
-import { handleIconClickEvents } from "./handleIconClickEvents.js";
+import { handleClickEvents, handleHoverEvents } from "./handleMouseEvents.js";
 import { aboutPage, hideAboutPage } from "./pages/about.js";
 import { hideHomePage, createIcons } from "./pages/home.js";
+import { contactPage, hideContactPage } from "./pages/contact.js";
 
 export function computer() {
   const scene = new THREE.Scene();
@@ -39,7 +40,13 @@ export function computer() {
 
   window.addEventListener(
     "click",
-    handleIconClickEvents(scene, camera, raycaster, mouse),
+    handleClickEvents(scene, camera, raycaster, mouse),
+    false
+  );
+
+  window.addEventListener(
+    "mousemove",
+    handleHoverEvents(scene, camera, raycaster, mouse),
     false
   );
 
@@ -62,6 +69,9 @@ export function renderPage(scene, camera, renderer, route) {
       break;
     case "/experience":
       break;
+    case "/contact":
+      hideContactPage(scene);
+      break;
     default:
       hideHomePage(scene);
       break;
@@ -75,6 +85,9 @@ export function renderPage(scene, camera, renderer, route) {
     case "/projects":
       break;
     case "/experience":
+      break;
+    case "/contact":
+      contactPage(scene);
       break;
     default: {
       hideAboutPage(scene);
