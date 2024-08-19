@@ -5,6 +5,7 @@ import { animateCamera } from "./animateCamera.js";
 import { handleIconClickEvents } from "./handleIconClickEvents.js";
 import { aboutPage, hideAboutPage } from "./pages/about.js";
 import { hideHomePage, createIcons } from "./pages/home.js";
+import { contactPage } from "./pages/contact.js";
 
 export function computer() {
   const scene = new THREE.Scene();
@@ -62,6 +63,8 @@ export function renderPage(scene, camera, renderer, route) {
       break;
     case "/experience":
       break;
+    case "/contact":
+      break;
     default:
       hideHomePage(scene);
       break;
@@ -75,6 +78,9 @@ export function renderPage(scene, camera, renderer, route) {
     case "/projects":
       break;
     case "/experience":
+      break;
+    case "/contact":
+      contactPage();
       break;
     default: {
       hideAboutPage(scene);
