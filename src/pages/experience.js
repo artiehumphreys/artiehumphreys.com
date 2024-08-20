@@ -27,7 +27,7 @@ export async function experiencePage(scene) {
       name: "header",
     },
     {
-      position: [0, 42.75, 8.71],
+      position: [0, 42.75, 8.7],
       content:
         "Enhanced keyword and semantic search capabilities using Amazon OpenSearch, doubling search \nspeed and improving result accuracy",
     },
@@ -42,7 +42,7 @@ export async function experiencePage(scene) {
       name: "header",
     },
     {
-      position: [-0.95, 34.25, 8.71],
+      position: [-0.95, 34.25, 8.7],
       content:
         "Dedicate 25 hours weekly to ensure the seamless execution of daily team operations, which \nincludes organizing practices, coordinating team travel, and overseeing logistics",
     },
