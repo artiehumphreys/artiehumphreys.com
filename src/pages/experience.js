@@ -2,6 +2,7 @@ import { addText } from "../utils/textUtils.js";
 
 export async function experiencePage(scene) {
   const header = await addText(0, 56.5, 8.7, "Experience", 2);
+  const colors = [0x037c6e, 0x0096ff, 0xffa756];
 
   const textData = [
     {
@@ -47,9 +48,15 @@ export async function experiencePage(scene) {
     },
   ];
 
+  let headerCount = -1;
+
   const paragraphs = await Promise.all(
     textData.map(async ({ position, content, name }) => {
       const size = name === "header" ? 1.25 : name === "skills" ? 0.5 : 0.7;
+      if (name === "header") {
+        ++headerCount;
+        return addText(...position, content, size, colors[headerCount]);
+      }
       return addText(...position, content, size);
     })
   );
