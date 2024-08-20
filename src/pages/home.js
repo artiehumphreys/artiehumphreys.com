@@ -78,7 +78,6 @@ export function createMenu(scene) {
     menuGroup.userData.type
   );
   scene.add(menuGroup);
-  scene.add(new THREE.BoxHelper(menuGroupClick));
   scene.add(menuGroupClick);
 
   async function openMenu() {
@@ -105,10 +104,9 @@ export function createMenu(scene) {
     bar2.visible = false;
 
     const menuText = {
-      Resume:
-        "https://s3.amazonaws.com/artiehumphreys.com/Resume_Artie_Humphreys.pdf",
+      Resume: "s3.amazonaws.com/artiehumphreys.com/Resume_Artie_Humphreys.pdf",
       Transcript:
-        "https://s3.amazonaws.com/artiehumphreys.com/Summer+2024+Transcript.pdf",
+        "s3.amazonaws.com/artiehumphreys.com/Summer+2024+Transcript.pdf",
     };
     const yStart = yPos - 1;
     const texts = await Promise.all(
@@ -119,11 +117,9 @@ export function createMenu(scene) {
 
     texts.forEach((text) => {
       text.userData.url = menuText[text.userData.text];
-      const empty = createClickArea(text, "redirect", text.userData.text);
-      empty.userData = text.userData;
-      scene.add(new THREE.BoxHelper(empty));
-      scene.add(text);
+      const empty = createClickArea(text, "redirect", text.userData.url);
       scene.add(empty);
+      scene.add(text);
     });
   }
 
@@ -192,7 +188,6 @@ export function createMenu(scene) {
 
   async function createText(xPos, yPos, name) {
     const iconText = await addText(xPos, yPos, zPos, name, 1);
-    iconText.type = "redirect";
     return iconText;
   }
 

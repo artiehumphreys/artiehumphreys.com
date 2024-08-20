@@ -17,10 +17,9 @@ export function handleClickEvents(scene, camera, raycaster, mouse) {
           )
         );
       });
-    console.log(scene.children, intersects[0]);
     if (intersects.length > 0) {
       const intersectedObject = intersects[0].object;
-      const targetPath = intersectedObject.userData?.url?.toLowerCase() ?? null;
+      const targetPath = intersectedObject.userData?.url ?? null;
       switch (intersectedObject.userData.type) {
         case "nav":
           route().navigate(targetPath);
