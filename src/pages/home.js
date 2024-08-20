@@ -31,16 +31,15 @@ export function homePage(scene) {
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.position.set(xPos, yPos + 2, zPos + 1.5);
-    plane.userData = { type: "nav", text: paths[name] };
+    plane.userData = { type: "nav", url: paths[name] };
     scene.add(plane);
     const iconText = await addText(xPos, yPos, zPos, name);
     scene.add(iconText);
-    await createMenu(scene);
+    createMenu(scene);
   }
 }
 
 let menuGroup;
-console.log(menuGroup);
 
 export function createMenu(scene) {
   if (menuGroup) return;
@@ -73,7 +72,14 @@ export function createMenu(scene) {
   menuGroup.position.set(xPos, yPos, 11.75);
   menuGroup.scale.set(0.7, 0.7, 0.7);
 
+  const menuGroupClick = createClickArea(
+    menuGroup,
+    menuGroup.userData.type,
+    menuGroup.userData.type
+  );
   scene.add(menuGroup);
+  scene.add(new THREE.BoxHelper(menuGroupClick));
+  scene.add(menuGroupClick);
 
   async function openMenu() {
     new TWEEN.Tween(bar1.rotation)
@@ -98,18 +104,57 @@ export function createMenu(scene) {
 
     bar2.visible = false;
 
-    const menuText = ["Resume", "Transcript"];
+    const menuText = {
+      Resume:
+        "https://s3.amazonaws.com/artiehumphreys.com/Resume_Artie_Humphreys.pdf",
+      Transcript:
+        "https://s3.amazonaws.com/artiehumphreys.com/Summer+2024+Transcript.pdf",
+    };
     const yStart = yPos - 1;
     const texts = await Promise.all(
-      menuText.map((text, index) =>
+      Object.entries(menuText).map(([text], index) =>
         createText(22 - text.length / 5, yStart - index * 2, text)
       )
     );
 
-    console.log(texts);
     texts.forEach((text) => {
+      text.userData.url = menuText[text.userData.text];
+      const empty = createClickArea(text, "redirect", text.userData.text);
+      empty.userData = text.userData;
+      scene.add(new THREE.BoxHelper(empty));
       scene.add(text);
+      scene.add(empty);
     });
+  }
+
+  function createClickArea(textMesh, type, name) {
+    const boundingBox = new THREE.Box3().setFromObject(textMesh);
+    const size = new THREE.Vector3();
+    boundingBox.getSize(size);
+
+    const center = new THREE.Vector3();
+    boundingBox.getCenter(center);
+
+    const clickGeometry = curvePlanes(size.x, size.y, center.x, center.y);
+    const clickMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+    });
+
+    const clickMesh = new THREE.Mesh(clickGeometry, clickMaterial);
+
+    switch (type) {
+      case "redirect":
+        clickMesh.position.set(center.x, center.y, center.z - 2);
+        break;
+      case "dropdown":
+        clickMesh.position.set(center.x, center.y, center.z - 4.25);
+        break;
+    }
+
+    clickMesh.userData = { type: type, url: name };
+
+    return clickMesh;
   }
 
   function closeMenu() {
@@ -147,6 +192,7 @@ export function createMenu(scene) {
 
   async function createText(xPos, yPos, name) {
     const iconText = await addText(xPos, yPos, zPos, name, 1);
+    iconText.type = "redirect";
     return iconText;
   }
 
