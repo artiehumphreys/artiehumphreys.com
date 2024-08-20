@@ -7,7 +7,7 @@ import { aboutPage } from "./pages/about.js";
 import { homePage } from "./pages/home.js";
 import { contactPage } from "./pages/contact.js";
 import { experiencePage } from "./pages/experience.js";
-import { hidePage } from "./pages/hidePage.js";
+import { hidePageContent } from "./pages/hidePageContent.js";
 
 export function computer() {
   const scene = new THREE.Scene();
@@ -62,7 +62,7 @@ export function renderPage(scene, camera, renderer, route) {
     return;
   }
   prevRoute = route;
-  hidePage(scene);
+  hidePageContent(scene);
 
   switch (route) {
     case "/about":
