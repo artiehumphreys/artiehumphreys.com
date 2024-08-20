@@ -3,9 +3,11 @@ import { setupLights } from "./lights.js";
 import { loadModel } from "./loadComputerModel.js";
 import { animateCamera } from "./animateCamera.js";
 import { handleClickEvents, handleHoverEvents } from "./handleMouseEvents.js";
-import { aboutPage, hideAboutPage } from "./pages/about.js";
-import { hideHomePage, createIcons } from "./pages/home.js";
-import { contactPage, hideContactPage } from "./pages/contact.js";
+import { aboutPage } from "./pages/about.js";
+import { homePage } from "./pages/home.js";
+import { contactPage } from "./pages/contact.js";
+import { experiencePage } from "./pages/experience.js";
+import { hidePage } from "./pages/hidePage.js";
 
 export function computer() {
   const scene = new THREE.Scene();
@@ -53,45 +55,29 @@ export function computer() {
   return { scene, camera, renderer };
 }
 
-let prevRoute = null;
 let doAnimation = true;
+let prevRoute = null;
 export function renderPage(scene, camera, renderer, route) {
-  if (route === prevRoute) {
+  if (prevRoute == route) {
     return;
   }
   prevRoute = route;
-
-  switch (prevRoute) {
-    case "/about":
-      hideAboutPage(scene);
-      break;
-    case "/projects":
-      break;
-    case "/experience":
-      break;
-    case "/contact":
-      hideContactPage(scene);
-      break;
-    default:
-      hideHomePage(scene);
-      break;
-  }
+  hidePage(scene);
 
   switch (route) {
     case "/about":
-      hideHomePage(scene);
       aboutPage(scene);
       break;
     case "/projects":
       break;
     case "/experience":
+      experiencePage(scene);
       break;
     case "/contact":
       contactPage(scene);
       break;
     default: {
-      hideAboutPage(scene);
-      createIcons(scene);
+      homePage(scene);
       if (doAnimation === true) {
         camera.position.set(0, 50, 100);
         camera.rotation.set(-0.5, 0, 0);

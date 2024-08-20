@@ -25,6 +25,9 @@ export function route() {
     .on("/projects", () => {
       renderPage(scene, camera, renderer, "/projects");
     })
+    .on("/experience", () => {
+      renderPage(scene, camera, renderer, "/experience");
+    })
     .on("/contact", () => {
       renderPage(scene, camera, renderer, "/contact");
     })

@@ -4,6 +4,7 @@ import { FontLoader } from "FontLoader";
 import { curveText } from "./geometryUtils.js";
 
 export async function addText(xPos, yPos, zPos, name, size = 0.75) {
+  console.log(name);
   const fontLoader = new FontLoader();
   const font = await new Promise((resolve, reject) => {
     fontLoader.load(
