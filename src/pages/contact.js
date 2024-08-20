@@ -86,15 +86,3 @@ export async function contactPage(scene) {
     return clickMesh;
   }
 }
-
-export function hideContactPage(scene) {
-  const objectsToRemove = [];
-  scene.children.forEach((child) => {
-    if (["icon", "text", "redirect"].includes(child.userData.type)) {
-      objectsToRemove.push(child);
-    }
-  });
-  objectsToRemove.forEach((object) => {
-    scene.remove(object);
-  });
-}

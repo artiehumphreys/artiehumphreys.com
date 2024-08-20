@@ -70,15 +70,3 @@ export async function aboutPage(scene) {
     return plane;
   }
 }
-
-export function hideAboutPage(scene) {
-  const objectsToRemove = [];
-  scene.children.forEach((child) => {
-    if (["image", "text"].includes(child.userData.type)) {
-      objectsToRemove.push(child);
-    }
-    objectsToRemove.forEach((object) => {
-      scene.remove(object);
-    });
-  });
-}

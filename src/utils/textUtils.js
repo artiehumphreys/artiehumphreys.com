@@ -3,7 +3,14 @@ import { TextGeometry } from "TextGeometry";
 import { FontLoader } from "FontLoader";
 import { curveText } from "./geometryUtils.js";
 
-export async function addText(xPos, yPos, zPos, name, size = 0.75) {
+export async function addText(
+  xPos,
+  yPos,
+  zPos,
+  name,
+  size = 0.75,
+  color = 0xffffff
+) {
   const fontLoader = new FontLoader();
   const font = await new Promise((resolve, reject) => {
     fontLoader.load(
@@ -23,7 +30,7 @@ export async function addText(xPos, yPos, zPos, name, size = 0.75) {
   });
 
   const textMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
+    color: color,
   });
 
   const textMesh = new THREE.Mesh(textGeometry, textMaterial);

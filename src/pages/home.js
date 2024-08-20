@@ -12,7 +12,7 @@ const paths = {
   Projects: "projects",
 };
 
-export function createIcons(scene) {
+export function homePage(scene) {
   const textures = loadSectionTextures();
 
   createCenteredIcon(textures.aboutMeTexture, -15, "About Me");
@@ -35,16 +35,4 @@ export function createIcons(scene) {
     const iconText = await addText(xPos, yPos, zPos, name);
     scene.add(iconText);
   }
-}
-
-export function hideHomePage(scene) {
-  const objectsToRemove = [];
-  scene.children.forEach((child) => {
-    if (["icon", "text"].includes(child.userData.type)) {
-      objectsToRemove.push(child);
-    }
-  });
-  objectsToRemove.forEach((object) => {
-    scene.remove(object);
-  });
 }
