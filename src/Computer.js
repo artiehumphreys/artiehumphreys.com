@@ -82,9 +82,9 @@ export function renderPage(scene, camera, renderer, route) {
         camera.position.set(0, 50, 100);
         camera.rotation.set(-0.5, 0, 0);
         animateCamera(camera);
-        setTimeout(() => {
-          doAnimation = false;
-        }, 2000);
+        // setTimeout(() => {
+        //   doAnimation = false;
+        // }, 2000);
       }
       break;
     }

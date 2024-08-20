@@ -62,14 +62,87 @@ export async function createMenu(scene) {
     menuGroup.add(bar);
   });
 
-  menuGroup.position.set(xPos, yPos, 11.7);
+  menuGroup.position.set(xPos, yPos, 11.75);
   menuGroup.scale.set(0.7, 0.7, 0.7);
 
   scene.add(menuGroup);
 
+  let menuOpen = false;
+
+  document.addEventListener("click", () => {
+    if (menuOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+    menuOpen = !menuOpen;
+  });
+
+  async function openMenu() {
+    new TWEEN.Tween(bar1.rotation)
+      .to({ z: Math.PI / 4 }, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .start();
+
+    new TWEEN.Tween(bar3.rotation)
+      .to({ z: -Math.PI / 4 }, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .start();
+
+    new TWEEN.Tween(bar1.position)
+      .to({ y: 0 }, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .start();
+
+    new TWEEN.Tween(bar3.position)
+      .to({ y: 0 }, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .start();
+
+    bar2.visible = false;
+
+    const menuText = ["Resume", "Transcript"];
+    const yStart = yPos - 1;
+    const texts = await Promise.all(
+      menuText.map((text, index) =>
+        createText(22 - text.length / 5, yStart - index * 2, text)
+      )
+    );
+
+    texts.forEach((text) => {
+      scene.add(text);
+    });
+  }
+
   async function createText(xPos, yPos, name) {
     const iconText = await addText(xPos, yPos, zPos, name, 1);
     return iconText;
+  }
+
+  function closeMenu() {
+    new TWEEN.Tween(bar1.rotation)
+      .to({ z: 0 }, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .start();
+
+    new TWEEN.Tween(bar3.rotation)
+      .to({ z: 0 }, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .start();
+
+    new TWEEN.Tween(bar1.position)
+      .to({ y: barSpacing }, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .start();
+
+    new TWEEN.Tween(bar3.position)
+      .to({ y: -barSpacing }, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .start();
+
+    bar2.visible = true;
+
+    removeMenuText(scene);
   }
 
   function removeMenuText(scene) {
