@@ -50,8 +50,12 @@ export function handleHoverEvents(scene, camera, raycaster, mouse) {
     const intersects = raycaster.intersectObjects(scene.children, true);
 
     let hovering = false;
+    let path = window.location.hash;
     intersects.forEach((intersect) => {
-      if (intersect.object.userData.type === "redirect") {
+      if (
+        intersect.object.userData.type === "redirect" ||
+        (path === "" && intersect.object.userData.type === "icon")
+      ) {
         hovering = true;
       }
     });

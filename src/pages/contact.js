@@ -90,7 +90,7 @@ export async function contactPage(scene) {
 export function hideContactPage(scene) {
   const objectsToRemove = [];
   scene.children.forEach((child) => {
-    if (["icon", "text"].includes(child.userData.type)) {
+    if (["icon", "text", "redirect"].includes(child.userData.type)) {
       objectsToRemove.push(child);
     }
   });
