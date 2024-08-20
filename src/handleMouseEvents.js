@@ -7,6 +7,7 @@ export function handleClickEvents(scene, camera, raycaster, mouse) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
+    console.log(raycaster.intersectObjects(scene.children));
     const intersects = raycaster
       .intersectObjects(scene.children)
       .filter((intersect) => {
@@ -20,9 +21,10 @@ export function handleClickEvents(scene, camera, raycaster, mouse) {
     console.log(intersects);
     if (intersects.length > 0) {
       const intersectedObject = intersects[0].object;
-      const targetPath = `/${intersectedObject.userData.text.toLowerCase()}`;
+      const targetPath =
+        intersectedObject.userData?.text?.toLowerCase() ?? null;
       switch (intersectedObject.userData.type) {
-        case "icon":
+        case "nav":
           route().navigate(targetPath);
           break;
         case "redirect": {

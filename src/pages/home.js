@@ -62,20 +62,20 @@ export function createMenu(scene) {
   const bar2 = new THREE.Mesh(barGeometry, barMaterial);
   const bar3 = new THREE.Mesh(barGeometry, barMaterial);
 
-  bar1.position.set(0, barSpacing, 0);
-  bar2.position.set(0, 0, 0);
-  bar3.position.set(0, -barSpacing, 0);
-
-  menuGroup.add(bar1);
-  menuGroup.add(bar2);
-  menuGroup.add(bar3);
+  [bar1, bar2, bar3].forEach((bar, index) => {
+    bar.position.set(0, barSpacing - index * barSpacing, 0);
+    bar.userData = {
+      type: "dropdown",
+    };
+    menuGroup.add(bar);
+  });
 
   menuGroup.position.set(xPos, yPos, 11.75);
   menuGroup.scale.set(0.7, 0.7, 0.7);
 
   scene.add(menuGroup);
 
-  function openMenu() {
+  async function openMenu() {
     new TWEEN.Tween(bar1.rotation)
       .to({ z: Math.PI / 4 }, 500)
       .easing(TWEEN.Easing.Quadratic.Out)
@@ -100,10 +100,13 @@ export function createMenu(scene) {
 
     const menuText = ["Resume", "Transcript"];
     const yStart = yPos - 1;
-    const texts = menuText.map((text, index) =>
-      createText(22 - text.length / 5, yStart - index * 2, text)
+    const texts = await Promise.all(
+      menuText.map((text, index) =>
+        createText(22 - text.length / 5, yStart - index * 2, text)
+      )
     );
 
+    console.log(texts);
     texts.forEach((text) => {
       scene.add(text);
     });
@@ -144,15 +147,14 @@ export function createMenu(scene) {
 
   async function createText(xPos, yPos, name) {
     const iconText = await addText(xPos, yPos, zPos, name, 1);
-    iconText.name = name;
     return iconText;
   }
 
-  menuGroup.onClick = () => {
+  menuGroup.onClick = async () => {
     if (clicked) {
       closeMenu();
     } else {
-      openMenu();
+      await openMenu();
     }
     clicked = !clicked;
   };
