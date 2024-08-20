@@ -34,5 +34,48 @@ export function homePage(scene) {
     scene.add(plane);
     const iconText = await addText(xPos, yPos, zPos, name);
     scene.add(iconText);
+    createMenu(scene);
+  }
+}
+
+export async function createMenu(scene) {
+  const menuGroup = new THREE.Group();
+  const barWidth = 3;
+  const barHeight = 0.3;
+  const barSpacing = 0.6;
+  const xPos = 22.2;
+  const yPos = 57;
+
+  const barColor = 0xffffff;
+
+  const barGeometry = curvePlanes(barWidth, barHeight, xPos, yPos);
+  const barMaterial = new THREE.MeshStandardMaterial({ color: barColor });
+
+  const bar1 = new THREE.Mesh(barGeometry, barMaterial);
+  const bar2 = new THREE.Mesh(barGeometry, barMaterial);
+  const bar3 = new THREE.Mesh(barGeometry, barMaterial);
+
+  const bars = [bar1, bar2, bar3];
+
+  bars.forEach((bar, index) => {
+    bar.position.set(0, barSpacing - barSpacing * index, 0);
+    menuGroup.add(bar);
+  });
+
+  menuGroup.position.set(xPos, yPos, 11.7);
+  menuGroup.scale.set(0.7, 0.7, 0.7);
+
+  scene.add(menuGroup);
+
+  async function createText(xPos, yPos, name) {
+    const iconText = await addText(xPos, yPos, zPos, name, 1);
+    return iconText;
+  }
+
+  function removeMenuText(scene) {
+    ["Resume", "Transcript"].forEach((name) => {
+      const text = scene.getObjectByName(name);
+      if (text) scene.remove(text);
+    });
   }
 }
