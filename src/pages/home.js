@@ -35,15 +35,13 @@ export function homePage(scene) {
     scene.add(plane);
     const iconText = await addText(xPos, yPos, zPos, name);
     scene.add(iconText);
-    createMenu(scene);
   }
+  createMenu(scene);
 }
 
-let menuGroup;
+let menuGroup = null;
 
 export function createMenu(scene) {
-  if (menuGroup) return;
-
   menuGroup = new THREE.Group();
   menuGroup.userData = { type: "dropdown" };
 
