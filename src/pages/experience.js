@@ -1,14 +1,11 @@
-import * as THREE from "three";
 import { addText } from "../utils/textUtils.js";
 
 export async function experiencePage(scene) {
   const header = await addText(0, 56.5, 8.7, "Experience", 2);
-  const xPos = -13;
-  const zPos = 8.7;
 
   const textData = [
     {
-      position: [-9.2, 53.5, 8.7],
+      position: [-6.4, 53.5, 8.7],
       content: "Biocore LLC - Computer Vision Intern",
       name: "header",
     },
@@ -24,7 +21,7 @@ export async function experiencePage(scene) {
     },
 
     {
-      position: [-9.8, 46, 8.7],
+      position: [-7.2, 46, 8.7],
       content: "Sitscape - Software Engineer Intern",
       name: "header",
     },
@@ -39,7 +36,7 @@ export async function experiencePage(scene) {
       name: "skills",
     },
     {
-      position: [-6.15, 38.5, 8.7],
+      position: [-2.6, 38.5, 8.7],
       content: "UVA Men's Basketball Team - Student Manager",
       name: "header",
     },
@@ -52,7 +49,7 @@ export async function experiencePage(scene) {
 
   const paragraphs = await Promise.all(
     textData.map(async ({ position, content, name }) => {
-      const size = name === "header" ? 1 : name === "skills" ? 0.5 : 0.7;
+      const size = name === "header" ? 1.25 : name === "skills" ? 0.5 : 0.7;
       return addText(...position, content, size);
     })
   );
