@@ -58,10 +58,12 @@ export async function aboutPage(scene) {
     const yOffset = 42.3;
 
     const planeGeometry = curvePlanes(12, 14, xOffset, yOffset);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.encoding = THREE.sRGBEncoding;
     const planeMaterial = new THREE.MeshStandardMaterial({
       map: texture,
-      roughness: 0.8,
-      metalness: 0.4,
+      transparent: false,
     });
 
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);

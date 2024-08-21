@@ -1,5 +1,9 @@
 import { route } from "./utils/router.js";
 import { click } from "./pages/home.js";
+import { moveThumb } from "./pages/projects.js";
+
+let isDragging = false;
+let dragStartY = null;
 
 export function handleClickEvents(scene, camera, raycaster, mouse) {
   return function (event) {
@@ -7,16 +11,18 @@ export function handleClickEvents(scene, camera, raycaster, mouse) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
+
     const intersects = raycaster
       .intersectObjects(scene.children)
       .filter((intersect) => {
         return (
           intersect.object.userData &&
-          ["redirect", "dropdown", "nav"].includes(
+          ["redirect", "dropdown", "nav", "thumb"].includes(
             intersect.object.userData.type
           )
         );
       });
+
     if (intersects.length > 0) {
       const intersectedObject = intersects[0].object;
       const targetPath = intersectedObject.userData?.url ?? null;
@@ -37,9 +43,34 @@ export function handleClickEvents(scene, camera, raycaster, mouse) {
         case "dropdown":
           click();
           break;
+        case "thumb":
+          startDragging(event, intersectedObject);
+          break;
       }
     }
   };
+}
+
+function startDragging(event) {
+  isDragging = true;
+  dragStartY = event.clientY;
+  document.addEventListener("mousemove", handleDrag);
+  document.addEventListener("mouseup", stopDragging);
+}
+
+function handleDrag(event) {
+  if (!isDragging) return;
+
+  const deltaY = (event.clientY - dragStartY) / 2;
+  dragStartY = event.clientY;
+
+  moveThumb(deltaY);
+}
+
+function stopDragging() {
+  isDragging = false;
+  document.removeEventListener("mousemove", handleDrag);
+  document.removeEventListener("mouseup", stopDragging);
 }
 
 export function handleHoverEvents(scene, camera, raycaster, mouse) {
@@ -53,7 +84,9 @@ export function handleHoverEvents(scene, camera, raycaster, mouse) {
     let hovering = false;
     intersects.forEach((intersect) => {
       if (
-        ["redirect", "nav", "dropdown"].includes(intersect.object.userData.type)
+        ["redirect", "nav", "dropdown", "thumb"].includes(
+          intersect.object.userData.type
+        )
       ) {
         hovering = true;
       }

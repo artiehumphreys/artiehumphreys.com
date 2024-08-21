@@ -124,36 +124,6 @@ export function createMenu(scene) {
     });
   }
 
-  function createClickArea(textMesh, type, name) {
-    const boundingBox = new THREE.Box3().setFromObject(textMesh);
-    const size = new THREE.Vector3();
-    boundingBox.getSize(size);
-
-    const center = new THREE.Vector3();
-    boundingBox.getCenter(center);
-
-    const clickGeometry = curvePlanes(size.x, size.y, center.x, center.y);
-    const clickMaterial = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0,
-    });
-
-    const clickMesh = new THREE.Mesh(clickGeometry, clickMaterial);
-
-    switch (type) {
-      case "redirect":
-        clickMesh.position.set(center.x, center.y, center.z - 2);
-        break;
-      case "dropdown":
-        clickMesh.position.set(center.x, center.y, center.z - 4.25);
-        break;
-    }
-
-    clickMesh.userData = { type: type, url: name };
-
-    return clickMesh;
-  }
-
   function closeMenu() {
     new TWEEN.Tween(bar1.rotation)
       .to({ z: 0 }, 500)
@@ -208,4 +178,34 @@ export function createMenu(scene) {
 
 export function click() {
   menuGroup.onClick();
+}
+
+export function createClickArea(textMesh, type, name) {
+  const boundingBox = new THREE.Box3().setFromObject(textMesh);
+  const size = new THREE.Vector3();
+  boundingBox.getSize(size);
+
+  const center = new THREE.Vector3();
+  boundingBox.getCenter(center);
+
+  const clickGeometry = curvePlanes(size.x, size.y, center.x, center.y);
+  const clickMaterial = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+  });
+
+  const clickMesh = new THREE.Mesh(clickGeometry, clickMaterial);
+
+  switch (type) {
+    case "redirect":
+      clickMesh.position.set(center.x, center.y, center.z - 2);
+      break;
+    case "dropdown":
+      clickMesh.position.set(center.x, center.y, center.z - 4.25);
+      break;
+  }
+
+  clickMesh.userData = { type: type, url: name };
+
+  return clickMesh;
 }

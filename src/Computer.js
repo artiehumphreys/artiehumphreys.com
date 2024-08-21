@@ -7,6 +7,7 @@ import { aboutPage } from "./pages/about.js";
 import { homePage } from "./pages/home.js";
 import { contactPage } from "./pages/contact.js";
 import { experiencePage } from "./pages/experience.js";
+import { projectPage } from "./pages/projects.js";
 import { hidePageContent } from "./pages/hidePageContent.js";
 
 export function computer() {
@@ -41,7 +42,7 @@ export function computer() {
   });
 
   window.addEventListener(
-    "click",
+    "mousedown",
     handleClickEvents(scene, camera, raycaster, mouse),
     false
   );
@@ -74,6 +75,7 @@ export function renderPage(scene, camera, renderer, route) {
       aboutPage(scene);
       break;
     case "/projects":
+      projectPage(scene);
       break;
     case "/experience":
       experiencePage(scene);
@@ -83,7 +85,7 @@ export function renderPage(scene, camera, renderer, route) {
       break;
     default: {
       homePage(scene);
-      if (doAnimation === true) {
+      if (doAnimation) {
         camera.position.set(0, 50, 100);
         camera.rotation.set(-0.5, 0, 0);
         animateCamera(camera);
@@ -96,7 +98,7 @@ export function renderPage(scene, camera, renderer, route) {
   }
   function animate(time) {
     requestAnimationFrame(animate);
-    if (doAnimation === true || isDropdownAnimating === true) {
+    if (doAnimation || isDropdownAnimating) {
       TWEEN.update(time);
     }
     renderer.render(scene, camera);
