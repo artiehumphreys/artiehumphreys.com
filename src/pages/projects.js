@@ -3,14 +3,61 @@ import { curvePlanes } from "../utils/geometryUtils.js";
 import { addText } from "../utils/textUtils.js";
 import { createClickArea } from "./home.js";
 import { loadTcfTexture } from "../utils/textureLoader.js";
-export async function projectPage(scene) {
-  const header = await addText(0, 56.5, 8.7, "Projects", 2);
-  await bvhGlbDemo();
-  await tcfDemo();
 
+export async function projectPage(scene) {
+  const scrollableObjects = [];
+
+  const header = await addText(0, 56.5, 8.7, "Projects", 2);
   scene.add(header);
 
-  async function bvhGlbDemo() {
+  await createBvhGlbDemo();
+  await createTcfDemo();
+
+  const [track, thumb] = createScrollbar();
+  scene.add(track);
+  scene.add(thumb);
+  scrollableObjects.push(thumb);
+
+  document.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      handleScroll(event.deltaY);
+    },
+    { passive: false }
+  );
+
+  function handleScroll(delta) {
+    delta = delta > 0 ? Math.min(delta, 10) : Math.max(delta, -10);
+    delta /= 5;
+
+    const minY = 51.4;
+    const maxY = 80;
+
+    header.visible = scrollableObjects[0].position.y + delta <= minY;
+
+    const thumbMinY = 39.25;
+    const thumbMaxY = 47.25;
+    const thumbConstant = 8 / 28;
+
+    scrollableObjects.forEach((obj) => {
+      let newYPos;
+      if (obj.userData?.name === "thumb") {
+        newYPos = obj.position.y - delta * thumbConstant;
+        newYPos > thumbMinY && newYPos < thumbMaxY
+          ? (obj.position.z += (delta * thumbConstant) / 26)
+          : (obj.position.z += 0);
+        newYPos = Math.max(Math.min(newYPos, thumbMaxY), thumbMinY);
+        obj.position.y = newYPos;
+      } else {
+        newYPos = obj.position.y + delta;
+        obj.position.y = newYPos;
+        obj.position.z -= delta / 26;
+      }
+    });
+  }
+
+  async function createBvhGlbDemo() {
     const header = await addText(-17.75, 53.2, 8.7, "bvh-to-glb", 1.2);
     const body = await addText(
       -8.75,
@@ -32,6 +79,12 @@ export async function projectPage(scene) {
       48.15,
       "github.com/artiehumphreys/bvh-to-glb?tab=readme-ov-file#video-demo"
     );
+
+    [header, body, skills, bvhDemo].forEach((item) => {
+      scene.add(item);
+      scrollableObjects.push(item);
+    });
+
     scene.add(
       createClickArea(
         header,
@@ -39,12 +92,9 @@ export async function projectPage(scene) {
         "github.com/artiehumphreys/bvh-to-glb"
       )
     );
-    [header, body, skills, bvhDemo].forEach((item) => {
-      scene.add(item);
-    });
   }
 
-  async function tcfDemo() {
+  async function createTcfDemo() {
     const header = await addText(-15.5, 42.2, 8.7, "theCourseForum", 1.2);
     const body = await addText(
       -9.2,
@@ -69,16 +119,16 @@ export async function projectPage(scene) {
       "thecourseforum.com/"
     );
 
-    scene.add(createClickArea(header, "redirect", "thecourseforum.com/"));
     [header, body, skills, tcfImage].forEach((item) => {
       scene.add(item);
+      scrollableObjects.push(item);
     });
+
+    scene.add(createClickArea(header, "redirect", "thecourseforum.com/"));
   }
 
   function createVideoTexture(videoName, xPos, yPos, url) {
     const video = document.createElement("video");
-    const width = 16;
-    const height = 9;
     video.src = `./public/demos/${videoName}.mp4`;
     video.loop = true;
     video.muted = true;
@@ -91,20 +141,15 @@ export async function projectPage(scene) {
     videoTexture.encoding = THREE.sRGBEncoding;
 
     const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
-
-    const geometry = curvePlanes(width, height, xPos, yPos);
+    const geometry = curvePlanes(16, 9, xPos, yPos);
     const videoMesh = new THREE.Mesh(geometry, videoMaterial);
 
     videoMesh.position.set(xPos, yPos, 10.4);
-    videoMesh.userData = {
-      type: "redirect",
-      url: url,
-    };
+    videoMesh.userData = { type: "redirect", url: url };
     return videoMesh;
   }
 
   async function createIcon(texture, xPos, yPos, width, height, url) {
-    const zPos = 8.4;
     const planeGeometry = curvePlanes(width, height, xPos, yPos);
     const planeMaterial = new THREE.MeshStandardMaterial({
       map: texture,
@@ -114,12 +159,36 @@ export async function projectPage(scene) {
     texture.magFilter = THREE.LinearFilter;
     texture.encoding = THREE.sRGBEncoding;
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.userData = {
-      type: "redirect",
-      url: url,
-    };
-    plane.position.set(xPos, yPos, zPos + 2);
-
+    plane.userData = { type: "redirect", url: url };
+    plane.position.set(xPos, yPos, 10.4);
     return plane;
+  }
+
+  function createScrollbar() {
+    const trackHeight = 12;
+    const thumbHeight = 4;
+    const xPos = 14.5;
+    const yPos = 43.25;
+    const zPos = 17.5;
+
+    const trackGeometry = curvePlanes(0.5, trackHeight, xPos, yPos);
+    const trackMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+    const track = new THREE.Mesh(trackGeometry, trackMaterial);
+    track.position.set(xPos, yPos, zPos);
+
+    const thumbGeometry = curvePlanes(
+      0.5,
+      thumbHeight,
+      xPos,
+      yPos + thumbHeight
+    );
+    const thumbMaterial = new THREE.MeshBasicMaterial({ color: 0x444444 });
+    const thumb = new THREE.Mesh(thumbGeometry, thumbMaterial);
+    thumb.position.set(xPos, yPos + thumbHeight, zPos + 0.01);
+    thumb.userData = {
+      name: "thumb",
+    };
+
+    return [track, thumb];
   }
 }
