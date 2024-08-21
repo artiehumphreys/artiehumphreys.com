@@ -42,7 +42,7 @@ export function computer() {
   });
 
   window.addEventListener(
-    "click",
+    "mousedown",
     handleClickEvents(scene, camera, raycaster, mouse),
     false
   );

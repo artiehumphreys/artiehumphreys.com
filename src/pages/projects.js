@@ -9,6 +9,7 @@ import {
 import { loadHoopVisionTexture } from "../utils/textureLoader.js";
 
 let hoopVisionTexture1, hoopVisionTexture2;
+let thumbMesh;
 let isPictureDisplayed = false;
 
 function switchDisplay() {
@@ -46,17 +47,16 @@ export async function projectPage(scene) {
     "wheel",
     (event) => {
       event.preventDefault();
-      handleScroll(event.deltaY);
+      thumb.onClick(event.deltaY);
     },
     { passive: false }
   );
 
-  function handleScroll(delta) {
+  thumb.onClick = (delta) => {
     delta = delta > 0 ? Math.min(delta, 10) : Math.max(delta, -10);
     delta /= 5;
 
     const minHeaderThresh = 51.4;
-
     const currentPos = scrollableObjects[0].position.y;
 
     header.visible = currentPos + delta <= minHeaderThresh;
@@ -73,6 +73,7 @@ export async function projectPage(scene) {
     } else if (currentPos + delta > maxY) {
       delta = maxY - currentPos;
     }
+
     scrollableObjects.forEach((obj) => {
       let newYPos;
       if (obj.userData?.name === "thumb") {
@@ -89,7 +90,7 @@ export async function projectPage(scene) {
         obj.position.z -= delta / 26;
       }
     });
-  }
+  };
 
   async function createBvhGlbDemo() {
     const header = await addText(-17.75, 53.2, 8.7, "bvh-to-glb", 1.2);
@@ -309,6 +310,9 @@ export async function projectPage(scene) {
     const trackMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
     const track = new THREE.Mesh(trackGeometry, trackMaterial);
     track.position.set(xPos, yPos, zPos);
+    track.userData = {
+      type: "icon",
+    };
 
     const thumbGeometry = curvePlanes(
       0.5,
@@ -317,12 +321,17 @@ export async function projectPage(scene) {
       yPos + thumbHeight
     );
     const thumbMaterial = new THREE.MeshBasicMaterial({ color: 0x444444 });
-    const thumb = new THREE.Mesh(thumbGeometry, thumbMaterial);
-    thumb.position.set(xPos - 0.0125, yPos + thumbHeight, zPos + 0.01);
-    thumb.userData = {
+    thumbMesh = new THREE.Mesh(thumbGeometry, thumbMaterial);
+    thumbMesh.position.set(xPos - 0.0125, yPos + thumbHeight, zPos + 0.01);
+    thumbMesh.userData = {
       name: "thumb",
+      type: "thumb",
     };
 
-    return [track, thumb];
+    return [track, thumbMesh];
   }
+}
+
+export function moveThumb(delta) {
+  thumbMesh.onClick(delta);
 }
