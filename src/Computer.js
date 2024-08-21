@@ -85,7 +85,7 @@ export function renderPage(scene, camera, renderer, route) {
       break;
     default: {
       homePage(scene);
-      if (doAnimation === true) {
+      if (doAnimation) {
         camera.position.set(0, 50, 100);
         camera.rotation.set(-0.5, 0, 0);
         animateCamera(camera);
