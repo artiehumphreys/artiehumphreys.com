@@ -31,27 +31,37 @@ export async function projectPage(scene) {
     delta = delta > 0 ? Math.min(delta, 10) : Math.max(delta, -10);
     delta /= 5;
 
-    const minY = 51.4;
-    const maxY = 80;
+    const minHeaderThresh = 51.4;
 
-    header.visible = scrollableObjects[0].position.y + delta <= minY;
+    const currentPos = scrollableObjects[0].position.y;
+
+    header.visible = currentPos + delta <= minHeaderThresh;
 
     const thumbMinY = 39.25;
     const thumbMaxY = 47.25;
     const thumbConstant = 8 / 28;
 
+    const minY = 51.4;
+    const maxY = 80;
+
+    if (currentPos + delta < minY) {
+      delta = minY - currentPos;
+    } else if (currentPos + delta > maxY) {
+      delta = maxY - currentPos;
+    }
     scrollableObjects.forEach((obj) => {
       let newYPos;
       if (obj.userData?.name === "thumb") {
         newYPos = obj.position.y - delta * thumbConstant;
-        newYPos > thumbMinY && newYPos < thumbMaxY
-          ? (obj.position.z += (delta * thumbConstant) / 26)
-          : (obj.position.z += 0);
         newYPos = Math.max(Math.min(newYPos, thumbMaxY), thumbMinY);
+
+        if (newYPos >= thumbMinY && newYPos <= thumbMaxY) {
+          obj.position.z += (delta * thumbConstant) / 26;
+        }
+
         obj.position.y = newYPos;
       } else {
-        newYPos = obj.position.y + delta;
-        obj.position.y = newYPos;
+        obj.position.y += delta;
         obj.position.z -= delta / 26;
       }
     });
@@ -179,12 +189,12 @@ export async function projectPage(scene) {
     const thumbGeometry = curvePlanes(
       0.5,
       thumbHeight,
-      xPos,
+      xPos - 0.0125,
       yPos + thumbHeight
     );
     const thumbMaterial = new THREE.MeshBasicMaterial({ color: 0x444444 });
     const thumb = new THREE.Mesh(thumbGeometry, thumbMaterial);
-    thumb.position.set(xPos, yPos + thumbHeight, zPos + 0.01);
+    thumb.position.set(xPos - 0.0125, yPos + thumbHeight, zPos + 0.01);
     thumb.userData = {
       name: "thumb",
     };
