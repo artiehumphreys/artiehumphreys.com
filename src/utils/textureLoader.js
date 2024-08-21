@@ -30,6 +30,10 @@ export function loadContactTextures() {
   };
 }
 
+export function loadTcfTexture() {
+  return textureLoader.load("../../public/demos/tcf-demo.png");
+}
+
 export function loadScreenTexture() {
   return textureLoader.load("../../public/background.jpg");
 }
