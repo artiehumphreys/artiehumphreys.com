@@ -2,7 +2,10 @@ import * as THREE from "three";
 import { curvePlanes } from "../utils/geometryUtils.js";
 import { addText } from "../utils/textUtils.js";
 import { createClickArea } from "./home.js";
-import { loadTcfTexture } from "../utils/textureLoader.js";
+import {
+  loadTcfTexture,
+  loadWhistleblowerTexture,
+} from "../utils/textureLoader.js";
 import { loadHoopVisionTexture } from "../utils/textureLoader.js";
 
 let hoopVisionTexture1, hoopVisionTexture2;
@@ -18,7 +21,7 @@ function switchDisplay() {
     hoopVisionTexture1.position.z -= 0.01;
   }
 
-  const nextSwitchTime = isPictureDisplayed ? 3000 : 8000;
+  const nextSwitchTime = isPictureDisplayed ? 4000 : 8000;
   setTimeout(switchDisplay, nextSwitchTime);
 }
 export async function projectPage(scene) {
@@ -30,6 +33,7 @@ export async function projectPage(scene) {
   await createBvhGlbDemo();
   await createTcfDemo();
   await createHoopVisionDemo();
+  await createWhistleblowerDemo();
 
   const [track, thumb] = createScrollbar();
   scene.add(track);
@@ -59,10 +63,10 @@ export async function projectPage(scene) {
 
     const thumbMinY = 39.25;
     const thumbMaxY = 47.25;
-    const thumbConstant = 8 / 27;
+    const thumbConstant = 8 / 23;
 
     const minY = 51.4;
-    const maxY = 79;
+    const maxY = 75;
 
     if (currentPos + delta < minY) {
       delta = minY - currentPos;
@@ -201,6 +205,50 @@ export async function projectPage(scene) {
       hoopVisionTexture2,
       empty,
     ].forEach((item) => {
+      scene.add(item);
+      scrollableObjects.push(item);
+    });
+  }
+
+  async function createWhistleblowerDemo() {
+    const header = await addText(
+      -9.3,
+      20.2,
+      8.71,
+      "UVA Bullying Whistleblower App",
+      1.2
+    );
+    const body = await addText(
+      -9.1,
+      18.2,
+      8.71,
+      "Led a team of 5 developers in designing, developing, and \ndeploying of a bullying whistleblower app for the UVA \ncommunity. Integrated Google OAuth and S3 storage.",
+      0.7
+    );
+    const skills = await addText(
+      -10.1,
+      13.2,
+      8.71,
+      "Skills: Python (Django), HTML/CSS, Amazon S3, Google OAuth, Github CI",
+      0.5
+    );
+    const whistleblowerImage = await createIcon(
+      loadWhistleblowerTexture(),
+      12.75,
+      15.15,
+      16,
+      9,
+      "github.com/artiehumphreys/WhistleblowerApp"
+    );
+
+    whistleblowerImage.position.z += 0.01;
+
+    const empty = createClickArea(
+      header,
+      "redirect",
+      "github.com/artiehumphreys/WhistleblowerApp"
+    );
+    [header, body, skills, whistleblowerImage, empty].forEach((item) => {
       scene.add(item);
       scrollableObjects.push(item);
     });
