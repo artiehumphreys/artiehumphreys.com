@@ -57,6 +57,11 @@ export function computer() {
 
 let doAnimation = true;
 let prevRoute = null;
+export let isDropdownAnimating = false;
+
+export function setDropdownAnimating(state) {
+  isDropdownAnimating = state;
+}
 export function renderPage(scene, camera, renderer, route) {
   if (prevRoute == route) {
     return;
@@ -82,16 +87,16 @@ export function renderPage(scene, camera, renderer, route) {
         camera.position.set(0, 50, 100);
         camera.rotation.set(-0.5, 0, 0);
         animateCamera(camera);
-        // setTimeout(() => {
-        //   doAnimation = false;
-        // }, 2000);
+        setTimeout(() => {
+          doAnimation = false;
+        }, 2000);
       }
       break;
     }
   }
   function animate(time) {
     requestAnimationFrame(animate);
-    if (doAnimation === true) {
+    if (doAnimation === true || isDropdownAnimating === true) {
       TWEEN.update(time);
     }
     renderer.render(scene, camera);

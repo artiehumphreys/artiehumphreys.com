@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { curvePlanes } from "../utils/geometryUtils.js";
 import { loadSectionTextures } from "../utils/textureLoader.js";
 import { addText } from "../utils/textUtils.js";
+import { setDropdownAnimating } from "../Computer.js";
 
 const yPos = 42;
 const zPos = 8.85;
@@ -12,6 +13,8 @@ const paths = {
   Experience: "experience",
   Projects: "projects",
 };
+let isAnimating = false;
+export default isAnimating;
 
 export function homePage(scene) {
   const textures = loadSectionTextures();
@@ -190,12 +193,16 @@ export function createMenu(scene) {
   }
 
   menuGroup.onClick = async () => {
+    setDropdownAnimating(true);
     if (clicked) {
       closeMenu();
     } else {
       await openMenu();
     }
     clicked = !clicked;
+    setTimeout(() => {
+      setDropdownAnimating(false);
+    }, 500);
   };
 }
 
