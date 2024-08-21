@@ -1,9 +1,9 @@
 import { route } from "./utils/router.js";
+import { click } from "./pages/home.js";
 
 export function handleClickEvents(scene, camera, raycaster, mouse) {
   return function (event) {
     event.preventDefault();
-    const path = window.location.hash;
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
@@ -12,30 +12,31 @@ export function handleClickEvents(scene, camera, raycaster, mouse) {
       .filter((intersect) => {
         return (
           intersect.object.userData &&
-          ["redirect", "icon"].includes(intersect.object.userData.type)
+          ["redirect", "dropdown", "nav"].includes(
+            intersect.object.userData.type
+          )
         );
       });
     if (intersects.length > 0) {
       const intersectedObject = intersects[0].object;
-      if (intersectedObject.userData.type === "icon" && path == "") {
-        const targetPath = `/${intersectedObject.userData.text.toLowerCase()}`;
-        route().navigate(targetPath);
-      } else if (
-        path === "#/contact" &&
-        intersectedObject.userData.type === "redirect"
-      ) {
-        const targetPath = `/${intersectedObject.userData.text.toLowerCase()}`;
-        const newTab = window.open(
-          "@".includes(targetPath)
-            ? `mailto:${targetPath}`
-            : `https://${targetPath}`,
-          "_blank"
-        );
-        if (newTab) {
-          newTab.focus();
-        } else {
-          alert("Please allow popups for this site.");
+      const targetPath = intersectedObject.userData?.url ?? null;
+      switch (intersectedObject.userData.type) {
+        case "nav":
+          route().navigate(targetPath);
+          break;
+        case "redirect": {
+          const newTab = window.open(
+            "@".includes(targetPath)
+              ? `mailto:${targetPath}`
+              : `https://${targetPath}`,
+            "_blank"
+          );
+          newTab ? newTab.focus() : alert("Please allow popups for this site.");
+          break;
         }
+        case "dropdown":
+          click();
+          break;
       }
     }
   };
@@ -50,11 +51,9 @@ export function handleHoverEvents(scene, camera, raycaster, mouse) {
     const intersects = raycaster.intersectObjects(scene.children, true);
 
     let hovering = false;
-    let path = window.location.hash;
     intersects.forEach((intersect) => {
       if (
-        intersect.object.userData.type === "redirect" ||
-        (path === "" && intersect.object.userData.type === "icon")
+        ["redirect", "nav", "dropdown"].includes(intersect.object.userData.type)
       ) {
         hovering = true;
       }

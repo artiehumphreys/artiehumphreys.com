@@ -57,6 +57,11 @@ export function computer() {
 
 let doAnimation = true;
 let prevRoute = null;
+export let isDropdownAnimating = false;
+
+export function setDropdownAnimating(state) {
+  isDropdownAnimating = state;
+}
 export function renderPage(scene, camera, renderer, route) {
   if (prevRoute == route) {
     return;
@@ -91,7 +96,7 @@ export function renderPage(scene, camera, renderer, route) {
   }
   function animate(time) {
     requestAnimationFrame(animate);
-    if (doAnimation === true) {
+    if (doAnimation === true || isDropdownAnimating === true) {
       TWEEN.update(time);
     }
     renderer.render(scene, camera);

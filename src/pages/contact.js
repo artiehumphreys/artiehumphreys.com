@@ -44,6 +44,7 @@ export async function contactPage(scene) {
       yPos + 1.6,
       name
     );
+    iconText.userData.url = name;
     const clickArea = createClickArea(iconText, name);
 
     scene.add(plane);
@@ -81,7 +82,7 @@ export async function contactPage(scene) {
 
     clickMesh.position.set(center.x, center.y + offsets[name], center.z + 0.1);
 
-    clickMesh.userData = { type: "redirect", text: name };
+    clickMesh.userData = { type: "redirect", url: name };
 
     return clickMesh;
   }
