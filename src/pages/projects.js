@@ -3,7 +3,24 @@ import { curvePlanes } from "../utils/geometryUtils.js";
 import { addText } from "../utils/textUtils.js";
 import { createClickArea } from "./home.js";
 import { loadTcfTexture } from "../utils/textureLoader.js";
+import { loadHoopVisionTexture } from "../utils/textureLoader.js";
 
+let hoopVisionTexture1, hoopVisionTexture2;
+let isPictureDisplayed = false;
+
+function switchDisplay() {
+  isPictureDisplayed = !isPictureDisplayed;
+  if (isPictureDisplayed) {
+    hoopVisionTexture2.position.z -= 0.01;
+    hoopVisionTexture1.position.z += 0.01;
+  } else {
+    hoopVisionTexture2.position.z += 0.01;
+    hoopVisionTexture1.position.z -= 0.01;
+  }
+
+  const nextSwitchTime = isPictureDisplayed ? 3000 : 8000;
+  setTimeout(switchDisplay, nextSwitchTime);
+}
 export async function projectPage(scene) {
   const scrollableObjects = [];
 
@@ -12,11 +29,14 @@ export async function projectPage(scene) {
 
   await createBvhGlbDemo();
   await createTcfDemo();
+  await createHoopVisionDemo();
 
   const [track, thumb] = createScrollbar();
   scene.add(track);
   scene.add(thumb);
   scrollableObjects.push(thumb);
+
+  switchDisplay();
 
   document.addEventListener(
     "wheel",
@@ -39,10 +59,10 @@ export async function projectPage(scene) {
 
     const thumbMinY = 39.25;
     const thumbMaxY = 47.25;
-    const thumbConstant = 8 / 28;
+    const thumbConstant = 8 / 27;
 
     const minY = 51.4;
-    const maxY = 80;
+    const maxY = 79;
 
     if (currentPos + delta < minY) {
       delta = minY - currentPos;
@@ -90,18 +110,15 @@ export async function projectPage(scene) {
       "github.com/artiehumphreys/bvh-to-glb?tab=readme-ov-file#video-demo"
     );
 
-    [header, body, skills, bvhDemo].forEach((item) => {
+    const empty = createClickArea(
+      header,
+      "redirect",
+      "github.com/artiehumphreys/bvh-to-glb"
+    );
+    [header, body, skills, bvhDemo, empty].forEach((item) => {
       scene.add(item);
       scrollableObjects.push(item);
     });
-
-    scene.add(
-      createClickArea(
-        header,
-        "redirect",
-        "github.com/artiehumphreys/bvh-to-glb"
-      )
-    );
   }
 
   async function createTcfDemo() {
@@ -129,15 +146,74 @@ export async function projectPage(scene) {
       "thecourseforum.com/"
     );
 
-    [header, body, skills, tcfImage].forEach((item) => {
+    const empty = createClickArea(header, "redirect", "thecourseforum.com/");
+    [header, body, skills, tcfImage, empty].forEach((item) => {
       scene.add(item);
       scrollableObjects.push(item);
     });
-
-    scene.add(createClickArea(header, "redirect", "thecourseforum.com/"));
   }
 
-  function createVideoTexture(videoName, xPos, yPos, url) {
+  async function createHoopVisionDemo() {
+    const header = await addText(-17, 31.2, 8.71, "Hoop Vision", 1.2);
+    const body = await addText(
+      -9.15,
+      29.2,
+      8.71,
+      "Designed and created an ML pipeline to track basketball \nplayers in broadcast footage. Achieved 97% accuracy \nin player detection and 90% accuracy in event prediction.",
+      0.7
+    );
+    const skills = await addText(
+      -16.45,
+      24.2,
+      8.71,
+      "Skills: Python, OpenCV, PyTorch",
+      0.5
+    );
+    hoopVisionTexture1 = await createIcon(
+      loadHoopVisionTexture(),
+      12.75,
+      26.15,
+      16,
+      9,
+      "github.com/artiehumphreys/hoop-vision"
+    );
+
+    hoopVisionTexture2 = createVideoTexture(
+      "hoop-vision-demo-2",
+      12.75,
+      26.15,
+      "github.com/artiehumphreys/hoop-vision?tab=readme-ov-file#hoop-vision"
+    );
+
+    hoopVisionTexture2.position.z += 0.01;
+
+    const empty = createClickArea(
+      header,
+      "redirect",
+      "github.com/artiehumphreys/hoop-vision"
+    );
+
+    [
+      header,
+      body,
+      skills,
+      hoopVisionTexture1,
+      hoopVisionTexture2,
+      empty,
+    ].forEach((item) => {
+      scene.add(item);
+      scrollableObjects.push(item);
+    });
+  }
+
+  function createVideoTexture(
+    videoName,
+    xPos,
+    yPos,
+    url,
+    width = 16,
+    height = 9
+  ) {
     const video = document.createElement("video");
     video.src = `./public/demos/${videoName}.mp4`;
     video.loop = true;
@@ -151,7 +227,7 @@ export async function projectPage(scene) {
     videoTexture.encoding = THREE.sRGBEncoding;
 
     const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
-    const geometry = curvePlanes(16, 9, xPos, yPos);
+    const geometry = curvePlanes(width, height, xPos, yPos);
     const videoMesh = new THREE.Mesh(geometry, videoMaterial);
 
     videoMesh.position.set(xPos, yPos, 10.4);
