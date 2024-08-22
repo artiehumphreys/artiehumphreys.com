@@ -10,9 +10,11 @@ import { loadHoopVisionTexture } from "../utils/textureLoader.js";
 
 let hoopVisionTexture1, hoopVisionTexture2;
 let thumbMesh;
-let isPictureDisplayed = false;
+let isPictureDisplayed = true;
+let switchTimeout;
 
 function switchDisplay() {
+  if (switchTimeout) clearTimeout(switchTimeout);
   isPictureDisplayed = !isPictureDisplayed;
   if (isPictureDisplayed) {
     hoopVisionTexture2.position.z -= 0.01;
@@ -22,8 +24,9 @@ function switchDisplay() {
     hoopVisionTexture1.position.z -= 0.01;
   }
 
-  const nextSwitchTime = isPictureDisplayed ? 8000 : 4000;
-  setTimeout(switchDisplay, nextSwitchTime);
+  const nextSwitchTime = isPictureDisplayed ? 4000 : 8000;
+
+  switchTimeout = setTimeout(switchDisplay, nextSwitchTime);
 }
 export async function projectPage(scene) {
   const scrollableObjects = [];
@@ -40,9 +43,9 @@ export async function projectPage(scene) {
   scene.add(track);
   scene.add(thumb);
   scrollableObjects.push(thumb);
-
+  console.log("hi");
   switchDisplay();
-
+  console.log("hi");
   document.addEventListener(
     "wheel",
     (event) => {
@@ -189,8 +192,6 @@ export async function projectPage(scene) {
       26.15,
       "github.com/artiehumphreys/hoop-vision?tab=readme-ov-file#hoop-vision"
     );
-
-    hoopVisionTexture2.position.z += 0.01;
 
     const empty = createClickArea(
       header,
