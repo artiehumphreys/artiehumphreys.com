@@ -34,10 +34,6 @@ export function loadTcfTexture() {
   return textureLoader.load("../../public/demos/tcf-demo.png");
 }
 
-export function loadHoopVisionTexture() {
-  return textureLoader.load("../../public/demos/hoop-vision-demo-1.png");
-}
-
 export function loadWhistleblowerTexture() {
   return textureLoader.load("../../public/demos/whistleblower-demo.png");
 }

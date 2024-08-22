@@ -6,28 +6,8 @@ import {
   loadTcfTexture,
   loadWhistleblowerTexture,
 } from "../utils/textureLoader.js";
-import { loadHoopVisionTexture } from "../utils/textureLoader.js";
 
-let hoopVisionTexture1, hoopVisionTexture2;
 let thumbMesh;
-let isPictureDisplayed = true;
-let switchTimeout;
-
-function switchDisplay() {
-  if (switchTimeout) clearTimeout(switchTimeout);
-  isPictureDisplayed = !isPictureDisplayed;
-  if (isPictureDisplayed) {
-    hoopVisionTexture2.position.z -= 0.01;
-    hoopVisionTexture1.position.z += 0.01;
-  } else {
-    hoopVisionTexture2.position.z += 0.01;
-    hoopVisionTexture1.position.z -= 0.01;
-  }
-
-  const nextSwitchTime = isPictureDisplayed ? 4000 : 8000;
-
-  switchTimeout = setTimeout(switchDisplay, nextSwitchTime);
-}
 export async function projectPage(scene) {
   const scrollableObjects = [];
 
@@ -43,9 +23,6 @@ export async function projectPage(scene) {
   scene.add(track);
   scene.add(thumb);
   scrollableObjects.push(thumb);
-  console.log("hi");
-  switchDisplay();
-  console.log("hi");
   document.addEventListener(
     "wheel",
     (event) => {
@@ -177,17 +154,9 @@ export async function projectPage(scene) {
       "Skills: Python, OpenCV, PyTorch",
       0.5
     );
-    hoopVisionTexture1 = await createIcon(
-      loadHoopVisionTexture(),
-      12.75,
-      26.15,
-      16,
-      9,
-      "github.com/artiehumphreys/hoop-vision"
-    );
 
-    hoopVisionTexture2 = createVideoTexture(
-      "hoop-vision-demo-2",
+    const hoopVisionTexture = createVideoTexture(
+      "hoop-vision-demo",
       12.75,
       26.15,
       "github.com/artiehumphreys/hoop-vision?tab=readme-ov-file#hoop-vision"
@@ -199,14 +168,7 @@ export async function projectPage(scene) {
       "github.com/artiehumphreys/hoop-vision"
     );
 
-    [
-      header,
-      body,
-      skills,
-      hoopVisionTexture1,
-      hoopVisionTexture2,
-      empty,
-    ].forEach((item) => {
+    [header, body, skills, hoopVisionTexture, empty].forEach((item) => {
       scene.add(item);
       scrollableObjects.push(item);
     });
