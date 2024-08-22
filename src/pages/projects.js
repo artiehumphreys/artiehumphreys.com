@@ -22,7 +22,7 @@ function switchDisplay() {
     hoopVisionTexture1.position.z -= 0.01;
   }
 
-  const nextSwitchTime = isPictureDisplayed ? 4000 : 8000;
+  const nextSwitchTime = isPictureDisplayed ? 8000 : 4000;
   setTimeout(switchDisplay, nextSwitchTime);
 }
 export async function projectPage(scene) {
