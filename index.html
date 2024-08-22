@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Artie Humphreys</title>
     <script type="importmap">
       {
         "imports": {
@@ -17,15 +18,258 @@
     <script src="https://unpkg.com/@tweenjs/tween.js@^20.0.0/dist/tween.umd.js"></script>
     <script src="https://unpkg.com/navigo"></script>
     <link rel="icon" href="./public/logo.png" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
+
+      .webgl-content,
+      .fallback-content {
+        display: none;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        /* padding: 5vh 5vw; */
+        /* overflow: hidden; */
+      }
+
+      header {
+        padding: 2vh 0;
+        width: 100%;
+        text-align: center;
+      }
+
+      .notice {
+        background-color: #ffcccc;
+        padding: 2vh;
+        border: 0.3vh solid red;
+        color: red;
+        margin-bottom: 3vh;
+        max-width: 90%;
+        text-align: left;
+      }
+
+      nav {
+        display: flex;
+        justify-content: center;
+        gap: 2vw;
+        margin-bottom: 3vh;
+      }
+
+      nav a {
+        text-decoration: none;
+        color: white;
+        padding: 1vh 2vw;
+        background-color: #007acc;
+        border-radius: 1vh;
+      }
+
+      nav a:hover {
+        background-color: #6082b6;
+      }
+
+      .content {
+        max-width: 90vw;
+        margin-bottom: 3vh;
+        text-align: left;
+      }
+
+      article {
+        margin-bottom: 4vh;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        text-align: center;
+      }
+
+      h3,
+      p {
+        text-align: left;
+      }
+    </style>
   </head>
-  <body
-    style="max-width: 100vw; max-height: 100vh; overflow: hidden; margin: 0"
-  >
-    <main class="wrap">
+  <body>
+    <!-- WebGL Content -->
+    <main class="webgl-content">
       <div class="viewer">
         <canvas id="canvas" style="width: 100vw; height: 100vh"></canvas>
       </div>
     </main>
     <script type="module" src="src/script.js"></script>
+
+    <!-- Fallback HTML Content -->
+    <div class="fallback-content">
+      <header>
+        <h1>Artie Humphreys</h1>
+      </header>
+
+      <div class="notice">
+        <span
+          >This website was created using Three.js and WebGL. For the full
+          experience, please view this website on a laptop or desktop device
+          with WebGL enabled. (<a href="https://get.webgl.org/webgl2/"
+            >https://get.webgl.org/webgl2/</a
+          >)</span
+        >
+      </div>
+
+      <nav>
+        <a href="#about">About Me</a>
+        <a href="#projects">Projects</a>
+        <a href="#experience">Experience</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="content">
+        <article id="about">
+          <h2>About Me</h2>
+          <p>
+            Hi, I'm Artie Humphreys, a third-year student at the University of
+            Virginia, double-majoring in Computer Science and Mathematics. I'm
+            passionate about using computer science to drive innovation and
+            create solutions across different fields, such as finance, sports
+            science, and technology.
+          </p>
+        </article>
+
+        <article id="projects">
+          <h2>Projects</h2>
+          <h3>
+            <a href="https://github.com/artiehumphreys/bvh-to-glb"
+              >BVH to GLB</a
+            >
+          </h3>
+          <p>
+            A script that converts player positional data to a multi-view 3D web
+            animation using the Blender API. Showcased at NBA Tech Expo 2024.
+          </p>
+          <h3><a href="https://thecourseforum.com/">TheCourseForum</a></h3>
+          <p>
+            Implemented a trigram/reverse-indexing search algorithm and
+            in-memory caching for previous searches, decreasing response time
+            for queries by up to 75%.
+          </p>
+          <h3>
+            <a href="https://github.com/artiehumphreys/hoop-vision"
+              >Hoop Vision</a
+            >
+          </h3>
+          <p>
+            Designed and created an ML pipeline to track basketball players in
+            broadcast footage. Achieved 97% accuracy in player detection and 90%
+            accuracy in event prediction.
+          </p>
+          <h3>
+            <a href="https://github.com/artiehumphreys/WhistleblowerApp"
+              >UVA Bullying Whistleblower App</a
+            >
+          </h3>
+          <p>
+            Led a team of 5 developers in designing, developing, and deploying
+            of a bullying whistleblower app for the UVA community. Integrated
+            Google OAuth and S3 storage and deployed on Heroku.
+          </p>
+        </article>
+
+        <article id="experience">
+          <h2>Experience</h2>
+          <h3>Biocore LLC - Computer Vision Intern</h3>
+          <p>
+            - Automated 3D animation workflows for multi-view analysis of player
+            injuries in NBA games, showcased at NBA Tech Expo 2024.
+          </p>
+          <p>
+            - Built a full-stack application using React, Tailwind, Go, and
+            Python, handling thousands of records within the company’s injury
+            analysis pipeline with 50% faster query response times through
+            concurrency and goroutines.
+          </p>
+          <h3>Sitscape - Software Engineer Intern</h3>
+          <p>
+            - Developed a chatbot that provides accurate responses from
+            user-uploaded PDFs in under a second, utilizing Falcon 7B LLM,
+            Mini-LM Embeddings, and FAISS vector database for efficient and
+            precise information retrieval.
+          </p>
+          <p>
+            - Enhanced keyword and semantic search capabilities using Amazon
+            OpenSearch, doubling search speed and improving result accuracy.
+          </p>
+          <h3>UVA Men's Basketball Team - Student Manager</h3>
+          <p>
+            - Dedicate 25 hours weekly to ensure the seamless execution of daily
+            team operations, including organizing practices, coordinating team
+            travel, and overseeing logistics.
+          </p>
+        </article>
+
+        <article id="contact">
+          <h2>Contact</h2>
+          <p>
+            You can reach me at
+            <a href="mailto:artieh2003@gmail.com">artieh2003@gmail.com</a> or
+            <a href="mailto:bsg6vr@virginia.edu">bsg6vr@virginia.edu</a>.
+          </p>
+          <p>
+            LinkedIn:
+            <a href="https://www.linkedin.com/in/artiehumphreys/"
+              >https://www.linkedin.com/in/artiehumphreys/</a
+            >
+          </p>
+          <p>
+            GitHub:
+            <a href="https://github.com/artiehumphreys"
+              >https://github.com/artiehumphreys</a
+            >
+          </p>
+        </article>
+      </div>
+    </div>
+
+    <script>
+      function webglSupport() {
+        try {
+          var canvas = document.createElement("canvas");
+          return (
+            !!window.WebGLRenderingContext &&
+            (canvas.getContext("webgl") ||
+              canvas.getContext("experimental-webgl"))
+          );
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function isMobileDevice() {
+        return /Mobi|Android/i.test(navigator.userAgent);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const webglContent = document.querySelector(".webgl-content");
+        const fallbackContent = document.querySelector(".fallback-content");
+
+        if (webglSupport() && !isMobileDevice()) {
+          webglContent.style.display = "flex";
+          fallbackContent.style.display = "none";
+        } else {
+          fallbackContent.style.display = "flex";
+          webglContent.style.display = "none";
+        }
+      });
+    </script>
   </body>
 </html>
