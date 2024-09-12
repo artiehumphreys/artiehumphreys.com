@@ -14,7 +14,7 @@ export async function addText(
   const fontLoader = new FontLoader();
   const font = await new Promise((resolve, reject) => {
     fontLoader.load(
-      "https://unpkg.com/three@0.166.1/examples/fonts/gentilis_bold.typeface.json",
+      "../public/gentilis_bold.typeface.json",
       resolve,
       undefined,
       reject
