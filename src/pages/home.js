@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { curvePlanes } from "../utils/geometryUtils.js";
-import { loadSectionTextures } from "../utils/textureLoader.js";
+import {
+  loadAnnouncementTexture,
+  loadSectionTextures,
+} from "../utils/textureLoader.js";
 import { addText } from "../utils/textUtils.js";
 import { setDropdownAnimating } from "../Computer.js";
 import { createCenteredIcon } from "../utils/createCenteredIcon.js";
@@ -42,22 +45,43 @@ export function homePage(scene) {
   );
 
   createMenu(scene);
+  createLinkedInNotification(scene);
 }
 
-export async function createLinkedInNotification(scene, texture, xPos, name) {
-  const planeGeometry = curvePlanes(12.5, 8.5, xPos, yPos);
+export async function createLinkedInNotification(scene) {
+  const width = 7;
+  const height = 5;
+  const xPos = -14;
+  const message = "I just posted on LinkedIn! Check out the post here.";
+
+  const announcementTexture = loadAnnouncementTexture();
+  createCenteredIcon(
+    scene,
+    announcementTexture,
+    xPos,
+    30,
+    8.85,
+    null,
+    width,
+    height
+  );
+  const planeGeometry = curvePlanes(width, height, xPos, 30);
   const planeMaterial = new THREE.MeshStandardMaterial({
-    map: texture,
+    map: announcementTexture,
     roughness: 0.1,
     metalness: 0.2,
     transparent: true,
   });
   const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-  plane.position.set(xPos, yPos + 2, zPos + 1.5);
-  //plane.userData = { type: "nav", url: paths[name] };
+  plane.position.set(xPos + 24, 32, 8.85 + 1.5);
+  plane.userData = {
+    type: "redirect",
+    url: "www.linkedin.com/feed/?shareActive=true&view=management",
+  };
+
+  const announcementText = await addText(0, 34, zPos - 0.15, message);
+  scene.add(announcementText);
   scene.add(plane);
-  const iconText = await addText(xPos, yPos, zPos, name);
-  scene.add(iconText);
 }
 
 let menuGroup = null;

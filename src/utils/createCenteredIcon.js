@@ -15,9 +15,11 @@ export async function createCenteredIcon(
   xPos,
   yPos,
   zPos,
-  name
+  name,
+  width = 12.5,
+  height = 8.5
 ) {
-  const planeGeometry = curvePlanes(12.5, 8.5, xPos, yPos);
+  const planeGeometry = curvePlanes(width, height, xPos, yPos);
   const planeMaterial = new THREE.MeshStandardMaterial({
     map: texture,
     roughness: 0.1,
@@ -26,8 +28,10 @@ export async function createCenteredIcon(
   });
   const plane = new THREE.Mesh(planeGeometry, planeMaterial);
   plane.position.set(xPos, yPos + 2, zPos + 1.5);
-  plane.userData = { type: "nav", url: paths[name] };
+  if (name) {
+    plane.userData = { type: "nav", url: paths[name] };
+    const iconText = await addText(xPos, yPos, zPos - 0.15, name);
+    scene.add(iconText);
+  }
   scene.add(plane);
-  const iconText = await addText(xPos, yPos, zPos - 0.15, name);
-  scene.add(iconText);
 }
