@@ -3,43 +3,61 @@ import { curvePlanes } from "../utils/geometryUtils.js";
 import { loadSectionTextures } from "../utils/textureLoader.js";
 import { addText } from "../utils/textUtils.js";
 import { setDropdownAnimating } from "../Computer.js";
+import { createCenteredIcon } from "../utils/createCenteredIcon.js";
 
 const yPos = 42;
 const zPos = 8.85;
+
 let clicked = false;
-const paths = {
-  "About Me": "about",
-  Contact: "contact",
-  Experience: "experience",
-  Projects: "projects",
-};
 let isAnimating = false;
 export default isAnimating;
 
 export function homePage(scene) {
   const textures = loadSectionTextures();
 
-  createCenteredIcon(textures.aboutMeTexture, -15, "About Me");
-  createCenteredIcon(textures.contactTexture, 15, "Contact");
-  createCenteredIcon(textures.experienceTexture, 5, "Experience");
-  createCenteredIcon(textures.projectTexture, -5, "Projects");
+  createCenteredIcon(
+    scene,
+    textures.aboutMeTexture,
+    -15,
+    yPos,
+    zPos,
+    "About Me"
+  );
+  createCenteredIcon(scene, textures.contactTexture, 15, yPos, zPos, "Contact");
+  createCenteredIcon(
+    scene,
+    textures.experienceTexture,
+    5,
+    yPos,
+    zPos,
+    "Experience"
+  );
+  createCenteredIcon(
+    scene,
+    textures.projectTexture,
+    -5,
+    yPos,
+    zPos,
+    "Projects"
+  );
 
-  async function createCenteredIcon(texture, xPos, name) {
-    const planeGeometry = curvePlanes(12.5, 8.5, xPos, yPos);
-    const planeMaterial = new THREE.MeshStandardMaterial({
-      map: texture,
-      roughness: 0.1,
-      metalness: 0.2,
-      transparent: true,
-    });
-    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.position.set(xPos, yPos + 2, zPos + 1.5);
-    plane.userData = { type: "nav", url: paths[name] };
-    scene.add(plane);
-    const iconText = await addText(xPos, yPos, zPos, name);
-    scene.add(iconText);
-  }
   createMenu(scene);
+}
+
+export async function createLinkedInNotification(scene, texture, xPos, name) {
+  const planeGeometry = curvePlanes(12.5, 8.5, xPos, yPos);
+  const planeMaterial = new THREE.MeshStandardMaterial({
+    map: texture,
+    roughness: 0.1,
+    metalness: 0.2,
+    transparent: true,
+  });
+  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  plane.position.set(xPos, yPos + 2, zPos + 1.5);
+  //plane.userData = { type: "nav", url: paths[name] };
+  scene.add(plane);
+  const iconText = await addText(xPos, yPos, zPos, name);
+  scene.add(iconText);
 }
 
 let menuGroup = null;
