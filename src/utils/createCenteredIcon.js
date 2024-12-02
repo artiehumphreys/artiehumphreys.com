@@ -51,7 +51,8 @@ export async function createLinkedInNotification(scene, config) {
   } = config;
 
   const message = "I just posted on LinkedIn! Check out the post here.";
-  const url = "www.linkedin.com/feed/?shareActive=true&view=management";
+  const url =
+    "www.linkedin.com/feed/update/urn:li:activity:7269387344116383744/";
 
   const announcementTexture = loadAnnouncementTexture();
 
