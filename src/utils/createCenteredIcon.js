@@ -64,7 +64,7 @@ export async function createLinkedInNotification(scene, config) {
     height,
   });
 
-  const planeGeometry = curvePlanes(width, height, xPos, yPos);
+  const planeGeometry = curvePlanes(width / 2, height / 2, xPos, yPos);
   const planeMaterial = new THREE.MeshStandardMaterial({
     map: announcementTexture,
     roughness: 0.1,
@@ -73,7 +73,7 @@ export async function createLinkedInNotification(scene, config) {
   });
 
   const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-  plane.position.set(xPos + 24, yPos + 2, zPos + 1);
+  plane.position.set(xPos + 25.5, yPos + 1, zPos);
   plane.userData = {
     type: "redirect",
     url: url,
