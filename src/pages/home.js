@@ -1,12 +1,12 @@
 import * as THREE from "three";
 import { curvePlanes } from "../utils/geometryUtils.js";
-import {
-  loadAnnouncementTexture,
-  loadSectionTextures,
-} from "../utils/textureLoader.js";
+import { loadSectionTextures } from "../utils/textureLoader.js";
 import { addText } from "../utils/textUtils.js";
 import { setDropdownAnimating } from "../Computer.js";
-import { createCenteredIcon } from "../utils/createCenteredIcon.js";
+import {
+  createCenteredIcon,
+  createLinkedInNotification,
+} from "../utils/createCenteredIcon.js";
 
 const yPos = 42;
 const zPos = 8.85;
@@ -15,73 +15,49 @@ let clicked = false;
 let isAnimating = false;
 export default isAnimating;
 
-export function homePage(scene) {
+export async function homePage(scene) {
   const textures = loadSectionTextures();
 
-  createCenteredIcon(
-    scene,
-    textures.aboutMeTexture,
-    -15,
-    yPos,
-    zPos,
-    "About Me"
-  );
-  createCenteredIcon(scene, textures.contactTexture, 15, yPos, zPos, "Contact");
-  createCenteredIcon(
-    scene,
-    textures.experienceTexture,
-    5,
-    yPos,
-    zPos,
-    "Experience"
-  );
-  createCenteredIcon(
-    scene,
-    textures.projectTexture,
-    -5,
-    yPos,
-    zPos,
-    "Projects"
-  );
+  const icons = [
+    {
+      texture: textures.aboutMeTexture,
+      xPos: -15,
+      yPos,
+      zPos,
+      name: "About Me",
+    },
+    {
+      texture: textures.contactTexture,
+      xPos: 15,
+      yPos,
+      zPos,
+      name: "Contact",
+    },
+    {
+      texture: textures.experienceTexture,
+      xPos: 5,
+      yPos,
+      zPos,
+      name: "Experience",
+    },
+    {
+      texture: textures.projectTexture,
+      xPos: -5,
+      yPos,
+      zPos,
+      name: "Projects",
+    },
+  ];
 
-  createMenu(scene);
-  createLinkedInNotification(scene);
-}
+  for (const iconConfig of icons) {
+    await createCenteredIcon(scene, iconConfig);
+  }
 
-export async function createLinkedInNotification(scene) {
-  const width = 7;
-  const height = 5;
-  const xPos = -14;
-  const message = "I just posted on LinkedIn! Check out the post here.";
-
-  const announcementTexture = loadAnnouncementTexture();
-  createCenteredIcon(
-    scene,
-    announcementTexture,
-    xPos,
-    30,
-    8.85,
-    null,
-    width,
-    height
-  );
-  const planeGeometry = curvePlanes(width, height, xPos, 30);
-  const planeMaterial = new THREE.MeshStandardMaterial({
-    map: announcementTexture,
-    roughness: 0.1,
-    metalness: 0.2,
-    transparent: true,
+  await createLinkedInNotification(scene, {
+    xPos: -14,
+    yPos: 30,
+    zPos: 8.85,
   });
-  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-  plane.position.set(xPos + 24, 32, 8.85 + 1.5);
-  plane.userData = {
-    type: "redirect",
-    url: "www.linkedin.com/feed/?shareActive=true&view=management",
-  };
-
-  const announcementText = await addText(0, 34, zPos - 0.15, message);
-  scene.add(announcementText);
-  scene.add(plane);
 }
 
 let menuGroup = null;
