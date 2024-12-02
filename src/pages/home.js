@@ -58,6 +58,8 @@ export async function homePage(scene) {
     yPos: 30,
     zPos: 8.85,
   });
+
+  createMenu(scene);
 }
 
 let menuGroup = null;
