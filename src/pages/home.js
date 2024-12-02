@@ -3,42 +3,62 @@ import { curvePlanes } from "../utils/geometryUtils.js";
 import { loadSectionTextures } from "../utils/textureLoader.js";
 import { addText } from "../utils/textUtils.js";
 import { setDropdownAnimating } from "../Computer.js";
+import {
+  createCenteredIcon,
+  createLinkedInNotification,
+} from "../utils/createCenteredIcon.js";
 
 const yPos = 42;
 const zPos = 8.85;
+
 let clicked = false;
-const paths = {
-  "About Me": "about",
-  Contact: "contact",
-  Experience: "experience",
-  Projects: "projects",
-};
 let isAnimating = false;
 export default isAnimating;
 
-export function homePage(scene) {
+export async function homePage(scene) {
   const textures = loadSectionTextures();
 
-  createCenteredIcon(textures.aboutMeTexture, -15, "About Me");
-  createCenteredIcon(textures.contactTexture, 15, "Contact");
-  createCenteredIcon(textures.experienceTexture, 5, "Experience");
-  createCenteredIcon(textures.projectTexture, -5, "Projects");
+  const icons = [
+    {
+      texture: textures.aboutMeTexture,
+      xPos: -15,
+      yPos,
+      zPos,
+      name: "About Me",
+    },
+    {
+      texture: textures.contactTexture,
+      xPos: 15,
+      yPos,
+      zPos,
+      name: "Contact",
+    },
+    {
+      texture: textures.experienceTexture,
+      xPos: 5,
+      yPos,
+      zPos,
+      name: "Experience",
+    },
+    {
+      texture: textures.projectTexture,
+      xPos: -5,
+      yPos,
+      zPos,
+      name: "Projects",
+    },
+  ];
 
-  async function createCenteredIcon(texture, xPos, name) {
-    const planeGeometry = curvePlanes(12.5, 8.5, xPos, yPos);
-    const planeMaterial = new THREE.MeshStandardMaterial({
-      map: texture,
-      roughness: 0.1,
-      metalness: 0.2,
-      transparent: true,
-    });
-    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.position.set(xPos, yPos + 2, zPos + 1.5);
-    plane.userData = { type: "nav", url: paths[name] };
-    scene.add(plane);
-    const iconText = await addText(xPos, yPos, zPos, name);
-    scene.add(iconText);
+  for (const iconConfig of icons) {
+    await createCenteredIcon(scene, iconConfig);
   }
+
+  await createLinkedInNotification(scene, {
+    xPos: -14,
+    yPos: 30,
+    zPos: 8.85,
+  });
+
   createMenu(scene);
 }
 

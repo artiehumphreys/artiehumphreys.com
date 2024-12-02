@@ -45,3 +45,7 @@ export function loadScreenTexture() {
 export function loadPortraitTexture() {
   return textureLoader.load("../../public/artiehumphreys.jpg");
 }
+
+export function loadAnnouncementTexture() {
+  return textureLoader.load("../../public//icons/info.png");
+}
