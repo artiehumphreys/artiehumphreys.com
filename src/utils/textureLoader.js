@@ -47,5 +47,5 @@ export function loadPortraitTexture() {
 }
 
 export function loadAnnouncementTexture() {
-  return textureLoader.load("../../public//icons/info.png");
+  return textureLoader.load("../../public/icons/info.png");
 }
