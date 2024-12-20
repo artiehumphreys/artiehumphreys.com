@@ -127,7 +127,7 @@ export function createMenu(scene) {
     const menuText = {
       Resume: "s3.amazonaws.com/artiehumphreys.com/Resume_Artie_Humphreys.pdf",
       Transcript:
-        "s3.amazonaws.com/artiehumphreys.com/Summer+2024+Transcript.pdf",
+        "s3.amazonaws.com/artiehumphreys.com/Winter_2025_Transcript.pdf",
     };
     const yStart = yPos - 1;
     const texts = await Promise.all(
