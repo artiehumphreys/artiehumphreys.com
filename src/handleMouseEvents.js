@@ -73,6 +73,12 @@ function stopDragging() {
   document.removeEventListener("mouseup", stopDragging);
 }
 
+function isBelowScreen(x, y) {
+  let slope = 0.37558;
+  let yIntercept = -0.8910675381263617;
+  return y < slope * x ** 2 + yIntercept;
+}
+
 export function handleHoverEvents(scene, camera, raycaster, mouse) {
   return function (event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -91,7 +97,7 @@ export function handleHoverEvents(scene, camera, raycaster, mouse) {
         hovering = true;
       }
     });
-    if (intersects.length > 2) {
+    if (intersects.length > 2 && !isBelowScreen(mouse.x, mouse.y)) {
       document.body.style.cursor = hovering
         ? "url('../../public/icons/cursor.png'), auto"
         : "url('../../public/icons/mouse.png'), auto";
