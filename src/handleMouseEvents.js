@@ -82,12 +82,6 @@ export function handleHoverEvents(scene, camera, raycaster, mouse) {
     const intersects = raycaster.intersectObjects(scene.children, true);
 
     let hovering = false;
-    let hide = false;
-    intersects.forEach((intersect) => {
-      if (intersect.object.userData.name == "defaultMaterial") {
-        hide = true;
-      }
-    });
     intersects.forEach((intersect) => {
       if (
         ["redirect", "nav", "dropdown", "thumb"].includes(
@@ -97,10 +91,12 @@ export function handleHoverEvents(scene, camera, raycaster, mouse) {
         hovering = true;
       }
     });
-    if (hide) {
+    if (intersects.length > 2) {
       document.body.style.cursor = hovering
         ? "url('../../public/icons/cursor.png'), auto"
         : "url('../../public/icons/mouse.png'), auto";
+    } else {
+      document.body.style.cursor = "auto";
     }
   };
 }
