@@ -49,3 +49,7 @@ export function loadPortraitTexture() {
 export function loadAnnouncementTexture() {
   return textureLoader.load("../../public/icons/info.png");
 }
+
+export function loadBackArrowTexture() {
+  return textureLoader.load("../../public/icons/backarrow.png");
+}

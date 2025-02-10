@@ -9,6 +9,7 @@ import { contactPage } from "./pages/contact.js";
 import { experiencePage } from "./pages/experience.js";
 import { projectPage } from "./pages/projects.js";
 import { hidePageContent } from "./pages/hidePageContent.js";
+import { createBackArrow } from "./utils/backArrow.js";
 
 export function computer() {
   const scene = new THREE.Scene();
@@ -72,15 +73,18 @@ export function renderPage(scene, camera, renderer, route) {
 
   switch (route) {
     case "/about":
+      createBackArrow(scene);
       aboutPage(scene);
       break;
     case "/projects":
-      projectPage(scene);
+      projectPage(scene, createBackArrow(scene));
       break;
     case "/experience":
+      createBackArrow(scene);
       experiencePage(scene);
       break;
     case "/contact":
+      createBackArrow(scene);
       contactPage(scene);
       break;
     default: {

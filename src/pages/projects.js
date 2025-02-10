@@ -8,8 +8,9 @@ import {
 } from "../utils/textureLoader.js";
 
 let thumbMesh;
-export async function projectPage(scene) {
+export async function projectPage(scene, arrowPromise) {
   const scrollableObjects = [];
+  const arrow = await arrowPromise;
 
   const header = await addText(0, 56.5, 8.7, "Projects", 2);
   scene.add(header);
@@ -39,7 +40,9 @@ export async function projectPage(scene) {
     const minHeaderThresh = 51.4;
     const currentPos = scrollableObjects[0].position.y;
 
-    header.visible = currentPos + delta <= minHeaderThresh;
+    const shouldBeVisible = currentPos + delta <= minHeaderThresh;
+    header.visible = shouldBeVisible;
+    arrow.visible = shouldBeVisible;
 
     const thumbMinY = 39.25;
     const thumbMaxY = 47.25;
