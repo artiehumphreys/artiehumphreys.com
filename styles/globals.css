@@ -1,4 +1,18 @@
-@import url('https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/katex.min.css');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url("https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css");
+@import "tailwindcss";
+@font-face {
+  font-family: "lmroman";
+  src: url("/fonts/lmroman10-regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+.prose {
+  max-width: 65ch;
+}
+
+@layer base {
+  .font-latex {
+    font-family: "lmroman", serif;
+  }
+}
