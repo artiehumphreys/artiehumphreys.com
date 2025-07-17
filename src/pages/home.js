@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { Tween, Easing } from "@tweenjs/tween.js";
+import { animationGroup } from "../animationGroup.js";
 import { curvePlanes } from "../utils/geometryUtils.js";
 import { loadSectionTextures } from "../utils/textureLoader.js";
 import { addText } from "../utils/textUtils.js";
@@ -26,13 +28,7 @@ export async function homePage(scene) {
       zPos,
       name: "About Me",
     },
-    {
-      texture: textures.contactTexture,
-      xPos: 15,
-      yPos,
-      zPos,
-      name: "Contact",
-    },
+    { texture: textures.contactTexture, xPos: 15, yPos, zPos, name: "Contact" },
     {
       texture: textures.experienceTexture,
       xPos: 5,
@@ -53,12 +49,7 @@ export async function homePage(scene) {
     await createCenteredIcon(scene, iconConfig);
   }
 
-  await createLinkedInNotification(scene, {
-    xPos: -14,
-    yPos: 30,
-    zPos: 8.85,
-  });
-
+  await createLinkedInNotification(scene, { xPos: -14, yPos: 30, zPos });
   createMenu(scene);
 }
 
@@ -84,9 +75,7 @@ export function createMenu(scene) {
 
   [bar1, bar2, bar3].forEach((bar, index) => {
     bar.position.set(0, barSpacing - index * barSpacing, 0);
-    bar.userData = {
-      type: "dropdown",
-    };
+    bar.userData = { type: "dropdown" };
     menuGroup.add(bar);
   });
 
@@ -102,28 +91,34 @@ export function createMenu(scene) {
   scene.add(menuGroupClick);
 
   async function openMenu() {
-    new TWEEN.Tween(bar1.rotation)
+    // Rotate bars outward
+    const tweenBR1 = new Tween(bar1.rotation)
       .to({ z: Math.PI / 4 }, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+      .easing(Easing.Quadratic.Out);
+    animationGroup.add(tweenBR1);
+    tweenBR1.start();
 
-    new TWEEN.Tween(bar3.rotation)
+    const tweenBR3 = new Tween(bar3.rotation)
       .to({ z: -Math.PI / 4 }, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+      .easing(Easing.Quadratic.Out);
+    animationGroup.add(tweenBR3);
+    tweenBR3.start();
 
-    new TWEEN.Tween(bar1.position)
+    const tweenBP1 = new Tween(bar1.position)
       .to({ y: 0 }, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+      .easing(Easing.Quadratic.Out);
+    animationGroup.add(tweenBP1);
+    tweenBP1.start();
 
-    new TWEEN.Tween(bar3.position)
+    const tweenBP3 = new Tween(bar3.position)
       .to({ y: 0 }, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+      .easing(Easing.Quadratic.Out);
+    animationGroup.add(tweenBP3);
+    tweenBP3.start();
 
     bar2.visible = false;
 
+    // Build menu text entries
     const menuText = {
       Resume: "s3.amazonaws.com/artiehumphreys.com/Resume_Artie_Humphreys.pdf",
       Transcript:
@@ -145,28 +140,32 @@ export function createMenu(scene) {
   }
 
   function closeMenu() {
-    new TWEEN.Tween(bar1.rotation)
+    // Rotate bars back
+    const tweenCR1 = new Tween(bar1.rotation)
       .to({ z: 0 }, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+      .easing(Easing.Quadratic.Out);
+    animationGroup.add(tweenCR1);
+    tweenCR1.start();
 
-    new TWEEN.Tween(bar3.rotation)
+    const tweenCR3 = new Tween(bar3.rotation)
       .to({ z: 0 }, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+      .easing(Easing.Quadratic.Out);
+    animationGroup.add(tweenCR3);
+    tweenCR3.start();
 
-    new TWEEN.Tween(bar1.position)
+    const tweenCP1 = new Tween(bar1.position)
       .to({ y: barSpacing }, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+      .easing(Easing.Quadratic.Out);
+    animationGroup.add(tweenCP1);
+    tweenCP1.start();
 
-    new TWEEN.Tween(bar3.position)
+    const tweenCP3 = new Tween(bar3.position)
       .to({ y: -barSpacing }, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .start();
+      .easing(Easing.Quadratic.Out);
+    animationGroup.add(tweenCP3);
+    tweenCP3.start();
 
     bar2.visible = true;
-
     removeMenuText(scene);
   }
 
@@ -184,15 +183,10 @@ export function createMenu(scene) {
 
   menuGroup.onClick = async () => {
     setDropdownAnimating(true);
-    if (clicked) {
-      closeMenu();
-    } else {
-      await openMenu();
-    }
+    if (clicked) closeMenu();
+    else await openMenu();
     clicked = !clicked;
-    setTimeout(() => {
-      setDropdownAnimating(false);
-    }, 500);
+    setTimeout(() => setDropdownAnimating(false), 500);
   };
 }
 
@@ -215,7 +209,6 @@ export function createClickArea(textMesh, type, name) {
   });
 
   const clickMesh = new THREE.Mesh(clickGeometry, clickMaterial);
-
   switch (type) {
     case "redirect":
       clickMesh.position.set(center.x, center.y, center.z - 2);
@@ -224,8 +217,6 @@ export function createClickArea(textMesh, type, name) {
       clickMesh.position.set(center.x, center.y, center.z - 4.25);
       break;
   }
-
   clickMesh.userData = { type: type, url: name };
-
   return clickMesh;
 }

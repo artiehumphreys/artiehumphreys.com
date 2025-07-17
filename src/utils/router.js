@@ -1,3 +1,4 @@
+import Navigo from "navigo";
 import { computer, renderPage } from "../Computer.js";
 
 let isModelLoaded = false;

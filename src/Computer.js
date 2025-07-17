@@ -10,6 +10,7 @@ import { experiencePage } from "./pages/experience.js";
 import { projectPage } from "./pages/projects.js";
 import { hidePageContent } from "./pages/hidePageContent.js";
 import { createBackArrow } from "./utils/backArrow.js";
+import { animationGroup } from "./animationGroup.js";
 
 export function computer() {
   const scene = new THREE.Scene();
@@ -103,7 +104,7 @@ export function renderPage(scene, camera, renderer, route) {
   function animate(time) {
     requestAnimationFrame(animate);
     if (doAnimation || isDropdownAnimating) {
-      TWEEN.update(time);
+      animationGroup.update(time);
     }
     renderer.render(scene, camera);
   }
