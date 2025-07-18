@@ -1,4 +1,4 @@
-import { route } from "./utils/router.js";
+import { router } from "./utils/router.js";
 import { click } from "./pages/home.js";
 import { moveThumb } from "./pages/projects.js";
 
@@ -28,7 +28,7 @@ export function handleClickEvents(scene, camera, raycaster, mouse) {
       const targetPath = intersectedObject.userData?.url ?? null;
       switch (intersectedObject.userData.type) {
         case "nav":
-          route().navigate(targetPath);
+          router.navigate(targetPath);
           break;
         case "redirect": {
           const newTab = window.open(

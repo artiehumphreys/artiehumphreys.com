@@ -1,14 +1,18 @@
-export function animateCamera(camera) {
-  const startPosition = { x: 0, y: 50, z: 100, rotationX: -0.5 };
-  const endPosition = { x: 0, y: 43, z: 38, rotationX: 0 };
+import { Tween, Easing } from "@tweenjs/tween.js";
+import { animationGroup } from "./animationGroup.js";
 
-  // eslint-disable-next-line no-unused-vars
-  const tween = new TWEEN.Tween(startPosition)
-    .to(endPosition, 2000)
-    .easing(TWEEN.Easing.Quadratic.InOut)
+export function animateCamera(camera) {
+  const start = { x: 0, y: 50, z: 100, rotationX: -0.5 };
+  const end = { x: 0, y: 43, z: 38, rotationX: 0 };
+
+  const camTween = new Tween(start)
+    .to(end, 2000)
+    .easing(Easing.Quadratic.InOut)
     .onUpdate(() => {
-      camera.position.set(startPosition.x, startPosition.y, startPosition.z);
-      camera.rotation.x = startPosition.rotationX;
-    })
-    .start();
+      camera.position.set(start.x, start.y, start.z);
+      camera.rotation.x = start.rotationX;
+    });
+
+  animationGroup.add(camTween);
+  camTween.start();
 }

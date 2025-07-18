@@ -1,8 +1,13 @@
 import { GLTFLoader } from "GLTFLoader";
+import { DRACOLoader } from "DRACOLoader";
 import { createComputerScreen } from "./createComputerScreen.js";
 
 export function loadModel(scene) {
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath("/draco/");
+
   const loader = new GLTFLoader();
+  loader.setDRACOLoader(dracoLoader);
   loader.load(
     "../models/scene.glb",
     function (gltf) {

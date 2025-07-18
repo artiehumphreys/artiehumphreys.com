@@ -64,6 +64,7 @@ export let isDropdownAnimating = false;
 export function setDropdownAnimating(state) {
   isDropdownAnimating = state;
 }
+
 export function renderPage(scene, camera, renderer, route) {
   if (prevRoute == route) {
     return;
@@ -100,12 +101,4 @@ export function renderPage(scene, camera, renderer, route) {
       break;
     }
   }
-  function animate(time) {
-    requestAnimationFrame(animate);
-    if (doAnimation || isDropdownAnimating) {
-      TWEEN.update(time);
-    }
-    renderer.render(scene, camera);
-  }
-  animate();
 }
