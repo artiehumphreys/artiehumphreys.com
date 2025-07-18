@@ -3,12 +3,10 @@ import * as THREE from "three";
 const textureLoader = new THREE.TextureLoader();
 
 export function loadSectionTextures() {
-  const aboutMeTexture = textureLoader.load("../../public/icons/aboutme.png");
-  const contactTexture = textureLoader.load("../../public/icons/contact.png");
-  const experienceTexture = textureLoader.load(
-    "../../public/icons/experience.png"
-  );
-  const projectTexture = textureLoader.load("../../public/icons/projects.png");
+  const aboutMeTexture = textureLoader.load("../../icons/aboutme.png");
+  const contactTexture = textureLoader.load("../../icons/contact.png");
+  const experienceTexture = textureLoader.load("../../icons/experience.png");
+  const projectTexture = textureLoader.load("../../icons/projects.png");
 
   return {
     aboutMeTexture,
@@ -19,9 +17,9 @@ export function loadSectionTextures() {
 }
 
 export function loadContactTextures() {
-  const emailTexture = textureLoader.load("../../public/icons/email.png");
-  const linkedinTexture = textureLoader.load("../../public/icons/linkedin.png");
-  const githubTexture = textureLoader.load("../../public/icons/github.png");
+  const emailTexture = textureLoader.load("../../icons/email.png");
+  const linkedinTexture = textureLoader.load("../../icons/linkedin.png");
+  const githubTexture = textureLoader.load("../../icons/github.png");
 
   return {
     emailTexture,
@@ -31,25 +29,25 @@ export function loadContactTextures() {
 }
 
 export function loadTcfTexture() {
-  return textureLoader.load("../../public/demos/tcf-demo.png");
+  return textureLoader.load("../../demos/tcf-demo.png");
 }
 
 export function loadWhistleblowerTexture() {
-  return textureLoader.load("../../public/demos/whistleblower-demo.png");
+  return textureLoader.load("../../demos/whistleblower-demo.png");
 }
 
 export function loadScreenTexture() {
-  return textureLoader.load("../../public/background.jpg");
+  return textureLoader.load("../../background.jpg");
 }
 
 export function loadPortraitTexture() {
-  return textureLoader.load("../../public/artiehumphreys.jpg");
+  return textureLoader.load("../../artiehumphreys.jpg");
 }
 
 export function loadAnnouncementTexture() {
-  return textureLoader.load("../../public/icons/info.png");
+  return textureLoader.load("../../icons/info.png");
 }
 
 export function loadBackArrowTexture() {
-  return textureLoader.load("../../public/icons/backarrow.png");
+  return textureLoader.load("../../icons/backarrow.png");
 }

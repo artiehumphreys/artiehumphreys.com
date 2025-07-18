@@ -99,8 +99,8 @@ export function handleHoverEvents(scene, camera, raycaster, mouse) {
     });
     if (intersects.length > 2 && !isBelowScreen(mouse.x, mouse.y)) {
       document.body.style.cursor = hovering
-        ? "url('../../public/icons/cursor.png'), auto"
-        : "url('../../public/icons/mouse.png'), auto";
+        ? "url('../../icons/cursor.png'), auto"
+        : "url('../../icons/mouse.png'), auto";
     } else {
       document.body.style.cursor = "auto";
     }

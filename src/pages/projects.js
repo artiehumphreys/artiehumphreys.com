@@ -230,7 +230,7 @@ export async function projectPage(scene, arrowPromise) {
     height = 9
   ) {
     const video = document.createElement("video");
-    video.src = `./public/demos/${videoName}.mp4`;
+    video.src = `./demos/${videoName}.mp4`;
     video.loop = true;
     video.muted = true;
     video.playsInline = true;
