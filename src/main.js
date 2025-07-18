@@ -1,5 +1,17 @@
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
-import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { computer } from "./Computer.js";
+import { setupRouter, router } from "./utils/router.js";
+import { animationGroup } from "./animationGroup.js";
+
+const { scene, camera, renderer } = computer();
+
+setupRouter(scene, camera, renderer);
+
+router.resolve();
+router.updatePageLinks();
+
+function animate(time) {
+  requestAnimationFrame(animate);
+  animationGroup.update(time);
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
