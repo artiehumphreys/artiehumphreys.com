@@ -7,8 +7,14 @@
   font-style: normal;
 }
 
-.prose {
-  max-width: 65ch;
+@layer components {
+  article.prose a {
+    cursor: pointer;
+    color: theme("colors.blue.600");
+    &:hover {
+      color: theme("colors.blue.800");
+    }
+  }
 }
 
 @layer base {

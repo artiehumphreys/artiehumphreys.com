@@ -8,15 +8,17 @@ interface HomeProps {
 }
 
 export default function Home({ children }: HomeProps) {
+  const today = new Date();
+  const formattedDate = today.toLocaleString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
   return (
-    <main className="mx-8 my-12">
-      <Title
-        title="Artie Humphreys' Blog"
-        author="Artie Humphreys"
-        date="June 29, 2025"
-      ></Title>
+    <div className="container mx-auto my-10 w-7/10 font-latex">
+      <Title title="Artie Humphreys' Blog" date={formattedDate}></Title>
+      <article className="prose mx-auto text-lg">{children}</article>
       <TableOfContents sections={tocData} />
-      <article className="prose prose-lg">{children}</article>
-    </main>
+    </div>
   );
 }

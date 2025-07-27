@@ -4,7 +4,9 @@ import type { TableOfContentsProps } from "./types";
 const TableOfContents: React.FC<TableOfContentsProps> = ({ sections }) => {
   return (
     <nav aria-label="Table of contents" className="font-latex prose my-8">
-      <h2 className="text-2xl font-bold mb-4">Contents</h2>
+      <h2 className="text-3xl font-bold mb-3 pb-2 border-b-2 border-gray-200">
+        Contents
+      </h2>
       <ul>
         {sections.map((section, i) => (
           <li key={section.anchor} className="mb-2">
@@ -21,7 +23,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections }) => {
                   <li key={sub.anchor} className="mb-1">
                     <a
                       href={`/${sub.anchor}`}
-                      className="text-sm hover:underline hover:cursor-pointer"
+                      className="text-small hover:underline hover:cursor-pointer"
                     >
                       {i + 1}.{j + 1} {sub.title}
                     </a>
