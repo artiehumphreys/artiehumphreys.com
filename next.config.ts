@@ -12,18 +12,24 @@ const mdx = withMDX({
     remarkPlugins: [
       remarkMath,
       remarkSlug,
-      [remarkToc, {
-        heading: "Table of Contents",
-        tight: true,
-        maxDepth: 3,
-      }],
+      [
+        remarkToc,
+        {
+          heading: "Table of Contents",
+          tight: true,
+          maxDepth: 3,
+        },
+      ],
     ],
     rehypePlugins: [rehypeKatex, rehypePrismPlus],
   },
 });
 
 const nextConfig: NextConfig = {
-  pageExtensions: ["ts","tsx","md","mdx"],
+  basePath: "/blog",
+  assetPrefix: "/blog/",
+  trailingSlash: true,
+  pageExtensions: ["ts", "tsx", "md", "mdx"],
 };
 
 export default mdx(nextConfig);
