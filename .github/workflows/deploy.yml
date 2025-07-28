@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "23.x"
           cache: yarn
@@ -22,7 +22,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build & export static site
-        run: yarn build && yarn export
+        run: yarn build
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -33,6 +33,5 @@ jobs:
 
       - name: Sync to S3
         run: |
-          aws s3 sync out/blog s3://artiehumphreys.com/blog \
-            --acl public-read \
+          aws s3 sync out/ s3://artiehumphreys.com/blog \
             --delete
