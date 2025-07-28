@@ -7,7 +7,7 @@ import { addText } from "../utils/textUtils.js";
 import { setDropdownAnimating } from "../Computer.js";
 import {
   createCenteredIcon,
-  createLinkedInNotification,
+  createBlogNotice,
 } from "../utils/createCenteredIcon.js";
 
 const yPos = 42;
@@ -49,7 +49,7 @@ export async function homePage(scene) {
     await createCenteredIcon(scene, iconConfig);
   }
 
-  await createLinkedInNotification(scene, { xPos: -14, yPos: 30, zPos });
+  await createBlogNotice(scene, { xPos: -14, yPos: 30, zPos });
   createMenu(scene);
 }
 

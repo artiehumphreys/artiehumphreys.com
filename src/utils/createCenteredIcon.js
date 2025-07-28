@@ -41,7 +41,7 @@ export async function createCenteredIcon(scene, config) {
   scene.add(plane);
 }
 
-export async function createLinkedInNotification(scene, config) {
+export async function createBlogNotice(scene, config) {
   const {
     xPos = -13.5,
     yPos = 30,
@@ -50,16 +50,15 @@ export async function createLinkedInNotification(scene, config) {
     height = 5,
   } = config;
 
-  const message = "I just posted on LinkedIn! Check out the post here.";
-  const url =
-    "www.linkedin.com/feed/update/urn:li:activity:7269387344116383744/";
+  const message = "Explore algorithms, optimization, and more on my blog here.";
+  const url = "artiehumphreys.com/blog";
 
   const announcementTexture = loadAnnouncementTexture();
 
   await createCenteredIcon(scene, {
     texture: announcementTexture,
-    xPos,
-    yPos,
+    xPos: xPos - 2.1,
+    yPos: yPos + 0.1,
     zPos,
     width,
     height,
@@ -74,7 +73,7 @@ export async function createLinkedInNotification(scene, config) {
   });
 
   const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-  plane.position.set(xPos + 25.5, yPos + 1, zPos);
+  plane.position.set(xPos + 27.5, yPos + 2, zPos);
   plane.userData = {
     type: "redirect",
     url: url,
