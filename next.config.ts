@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   basePath: "/blog",
   assetPrefix: "/blog/",
   trailingSlash: true,
+  output: "export",
   pageExtensions: ["ts", "tsx", "md", "mdx"],
 };
 

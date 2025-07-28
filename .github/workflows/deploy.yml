@@ -16,14 +16,13 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "23.x"
+          cache: yarn
 
       - name: Install dependencies
-        run: npm ci --omit=optional
+        run: yarn install --frozen-lockfile
 
       - name: Build & export static site
-        run: |
-          npm run build
-          npm run export
+        run: yarn build && yarn export
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
