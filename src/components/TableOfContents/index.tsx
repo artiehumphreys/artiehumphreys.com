@@ -12,7 +12,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections }) => {
           <li key={section.anchor} className="mb-2">
             <a
               //href={`/${section.anchor}`}
-              href="/wip"
+              href="/blog/wip"
               className="text-base font-bold hover:underline hover:cursor-pointer"
             >
               {i + 1}. {section.title}
@@ -24,7 +24,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections }) => {
                   <li key={sub.anchor} className="mb-1">
                     <a
                       //href={`/${sub.anchor}`}
-                      href="/wip"
+                      href="/blog/wip"
                       className="text-small hover:underline hover:cursor-pointer"
                     >
                       {i + 1}.{j + 1} {sub.title}

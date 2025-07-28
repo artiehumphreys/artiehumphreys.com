@@ -6,7 +6,7 @@ export default function SocialLinks() {
   const links = [
     {
       icon: <HomeIcon size={18} />,
-      href: "/",
+      href: "https://artiehumphreys.com",
       label: "Home",
     },
     {
