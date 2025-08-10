@@ -120,8 +120,8 @@ export function createMenu(scene) {
 
     // Build menu text entries
     const menuText = {
-      Resume: "artiehumphreys.com/Resume_Artie_Humphreys.pdf",
-      Transcript: "artiehumphreys.com/Summer_2025_Transcript.pdf",
+      Resume: "artiehumphreys.com/resume.pdf",
+      Transcript: "artiehumphreys.com/transcript.pdf",
     };
     const yStart = yPos - 1;
     const texts = await Promise.all(
