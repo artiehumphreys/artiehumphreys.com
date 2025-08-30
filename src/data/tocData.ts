@@ -4,12 +4,12 @@ import type { TocSection } from "../components/TableOfContents/types";
 export const tocData: TocSection[] = [
   {
     title: "Optimization",
-    anchor: "optimization",
+    anchor: "/blog/optimization",
     children: [
       {
         title:
           "Particle Simulation: Improving Performance by 10x With Parallelization",
-        anchor: "optimizing-particle-simulation",
+        anchor: "/blog/optimization/particle-simulation",
       },
     ],
   },
