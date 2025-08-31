@@ -1,21 +1,219 @@
-<div className="mb-12 flex justify-center">
-  <video
-    src="/blog/demo.mp4"
-    autoPlay
-    loop
-    muted
-    style={{
-      width: "55%",
-      height: "100%",
-      borderRadius: 4,
-    }}
-  />
-</div>
+<figure className="mb-12">
+  <div className="flex justify-center">
+    <video
+      src="/blog/demo.mp4"
+      autoPlay
+      loop
+      muted
+      style={{ width: "60%", height: "100%", borderRadius: 4 }}
+    />
+  </div>
+  <figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600">
+    Real-time particle simulation with 12,500 particles on a 2020 MacBook Pro (Apple M1, 8-core CPU, 8 GB RAM).
+  </figcaption>
+</figure>
+
 The world of physics and mathematics are greatly intertwined. It is very much a two-way
 relationship, where mathematical concepts can be used to describe physical phenomena,
 and physical experiments can lead to new mathematical insights. The goal of this
 project was to explore this relationship by creating a particle simulator, giving
-me the avenue to dive deeper with C++ optimization and object-oriented design and
-create something that interests me as a software developer.
+me the avenue to dive deeper with C++ optimization and object-oriented design in
+hopes of creating something that interests me as a software developer.
 
-First,
+<div className="h-5" />
+
+First, I think that it is important to discuss the physics behind the simulation. 
+The particles in the simulation are influenced by gravity and also interact with 
+each other through collisions. To model this effectively and simply, I chose to use 
+<a href="https://resources.saylor.org/wwwresources/archived/site/wp-content/uploads/2011/06/MA221-6.1.pdf" target="_blank">Verlet Integration</a>,
+as it provided a simple means of approximating the motion of particles in a way that 
+is both efficient and easy to implement. Here's a simple derivation of the equations 
+involved. Feel free to skip over the math if you're not interested.
+
+<div className="h-5" />
+<div className="h-5" />
+
+Let’s start at the beginning. A particle’s motion is governed by Newton’s second law:
+
+$$
+\begin{aligned}
+m\,\mathbf{x}''(t) &= \mathbf{F}(\mathbf{x}, t),\\
+\mathbf{x}''(t) &= \mathbf{a}(\mathbf{x}, t) := \frac{\mathbf{F}(\mathbf{x}, t)}{m}.
+\end{aligned}
+$$
+
+In my code, gravity is constant, so $ \mathbf{a}(\mathbf{x}, t) = \langle 0,\, g \rangle $.
+<div className="h-5" />
+Now expand the position about time $t$ using Taylor series. The general (one-dimensional) Taylor formula is
+
+$$
+f(t+h) \;=\; f(t) + f'(t)\,h + \frac{f''(t)}{2!}\,h^{2}
++ \frac{f^{(3)}(t)}{3!}\,h^{3} + \cdots
+$$
+
+Set $h=+\Delta t$ for a forward step:
+
+$$
+\mathbf{x}(t+\Delta t)
+= \mathbf{x}(t) + \mathbf{v}(t)\,\Delta t
+  + \tfrac{1}{2}\,\mathbf{a}(t)\,\Delta t^2
+  + \tfrac{1}{6}\,\mathbf{j}(t)\,\Delta t^3
+  + \mathcal{O}(\Delta t^4),
+$$
+
+and set $h=-\Delta t$ for a backward step:
+
+$$
+\mathbf{x}(t-\Delta t)
+= \mathbf{x}(t) - \mathbf{v}(t)\,\Delta t
+  + \tfrac{1}{2}\,\mathbf{a}(t)\,\Delta t^2
+  - \tfrac{1}{6}\,\mathbf{j}(t)\,\Delta t^3
+  + \mathcal{O}(\Delta t^4),
+$$
+
+where $\mathbf{v}=\mathbf{x}'$ is velocity and $\mathbf{j}=\mathbf{x}'''$ is jerk.
+<div className="h-5" />
+Adding these two expansions together eliminates the velocity and jerk terms:
+
+$$
+\mathbf{x}(t+\Delta t) + \mathbf{x}(t-\Delta t)
+= 2\,\mathbf{x}(t) + \mathbf{a}(t)\,\Delta t^2 + \mathcal{O}(\Delta t^4).
+$$
+
+Solve for the unknown future position gives us finally:
+$$
+\boxed{\;
+\mathbf{x}(t+\Delta t)
+= 2\,\mathbf{x}(t) - \mathbf{x}(t-\Delta t)
+  + \mathbf{a}(t)\,\Delta t^2
+\;}
+$$
+This gives us a formula only dependent on the current and previous positions of the 
+particle (assuming constant acceleration), simplifying our calculations greatly. 
+Here's an outline of how I calculated this for each particle in C++:
+
+<div className="h-5" />
+
+```cpp
+struct Vec2 { float x, y; };
+
+struct Particle {
+    vec2 position;
+    vec2 lastPosition;
+    vec2 acceleration;
+
+    void update(float timeDiff) {
+        vec2 newPosition =
+            2.0f * position - lastPosition + acceleration * (timeDiff * timeDiff);
+        position = newPosition;
+        lastPosition = position;
+    }
+};
+```
+
+<div className="h-5" />
+<div className="h-5" />
+
+Next, let's discuss some of the design choices I made while implementing the simulator.
+Thinking broadly, noticing collisions between particles is something that seems trivial,
+but doing it efficiently can be complex. A naive approach would be to check every
+particle against every other particle, which is incredibly inefficient when you realize
+that there is no need to check for collisions between distant particles. Thus, to 
+optimize this, I implemented a
+<a href="https://www.youtube.com/watch?v=sx4IIQL0x7c" target="_blank">spatial hash grid</a>,
+where each particle belongs to a specific cell in the grid, allowing for more efficient
+collision detection by limiting collision checks to only particles in surrounding cells.
+With this, we go from iterating over all particle pairs to checking each cell and
+surrounding cells, which significantly reduces the number of checks needed as the number 
+of particles grows. We can also tune the size of each cell as needed for maximum performance.
+
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+    <div className="mx-2"><strong>Aside - Why a Hash Grid?</strong> For this simulator, 
+    I chose a uniform spatial hash grid over a more complex structure like a quad tree
+    or a k-d tree due to its simplicity and efficiency. Quadtrees are great when particle 
+    sizes vary a lot or the scene is extremely non-uniform, but in a dynamic simulation,
+    they’re branchy to traverse and costly to rebuild or rebalance every frame. 
+    The grid is simpler, cache-friendlier, easy to tune, and parallelizes cleanly
+    because each cell’s work is local and bounded.</div>
+</aside>
+
+<div className="h-5" />
+
+On the collision side of things, handling them efficiently is key. Since square root is a
+costly operation in terms of performance, with a latency of 
+<a href="https://developer.arm.com/documentation/100400/0002/floating-point-unit-programmers-model/instruction-throughput-and-latency?lang=en" target="_blank">up to 32 clock cycles</a> 
+on most ARM architectures, using this operation sparingly will be required. To do so,
+we can avoid it altogether by using squared distances instead of actual distances when
+checking for collisions. Concretely, given particles $$p_1$$, $$p_2$$ with centers 
+$$c_1$$, $$c_2$$ and radii $$r_1$$, $$r_2$$, we can check for a collision by verifying 
+if the squared distance between their centers is less than the squared sum of their radii:
+
+$$
+\|\mathbf{c_1} - \mathbf{c_2}\|^2 < (r_1 + r_2)^2
+$$
+$$
+\implies \sqrt{(c_1.x - c_2.x)^2 + (c_1.y - c_2.y)^2}^2 < (r_1 + r_2)^2
+$$
+$$
+\implies (c_1.x - c_2.x)^2 + (c_1.y - c_2.y)^2 < (r_1 + r_2)^2
+$$
+
+This calculation costs only a few multiplies and is great for when we’re solely concerned 
+with whether or not the two particles are touching. Once we determine that two particles
+are indeed colliding, we need to resolve the collision by adjusting their positions and
+velocities accordingly. To do so, we can use the normal vector between the two particles'
+centers to determine the direction of the collision. This can be calculated as follows:
+$$
+\mathbf{n} = \frac{\mathbf{c_1} - \mathbf{c_2}}{\|\mathbf{c_1} - \mathbf{c_2}\|} = \frac{\mathbf{c_1} - \mathbf{c_2}}{\sqrt{(c_1.x - c_2.x)^2 + (c_1.y - c_2.y)^2}}
+$$
+We can then calculate the overlap to push each particle by half the overlap in opposite 
+directions with respect to the normal vector calculated above. In C++, this can be 
+implemented as follows:
+
+<div className="h-5" />
+
+```cpp
+#include "particle.hpp"
+#include <cmath>
+
+void solveCollision(Particle &p1, Particle &p2) {
+    constexpr float epsilon = 1e-4;
+    const float expectedDistance = static_cast<float>(p1.radius + p2.radius);
+    vec2 axis = p1.position - p2.position;
+    const float squaredDistance = axis.x * axis.x + axis.y * axis.y;
+
+    if (squaredDistance < expectedDistance * expectedDistance &&
+        squaredDistance > epsilon) {
+        const float actualDistance = std::sqrt(squaredDistance);
+        const float overlap = expectedDistance - actualDistance;
+        const float delta = 0.5f * overlap;
+
+        const vec2 colVec = (axis / actualDistance) * delta;
+
+        p1.position += colVec;
+        p2.position -= colVec;
+    }
+}
+```
+
+<div className="h-5" />
+
+Now, we only use the square root operation when necessary and handle collisions correctly.
+
+<div className="h-5" />
+<div className="h-5" />
+
+With all of this in place, I was able to achieve a real-time simulation with around 750 particles 
+running at 60 FPS before hitting the performance limits of my hardware. This is a far way
+from achieving my goal of 15,000 particles, but it’s a promising start. Now, let's look at the
+optimizations that I made to improve performance and scalability.
+
+<div className="h-5" />
+
+<ol>
+  <li>
+    <div> **Improved Spatial Hashing.** 
+    The first big improvement that saw a ~2x increase in performance was optimizing the spatial hashing algorithm by using a more efficient grid cell lookup mechanism, reducing unnecessary checks during collision detection. </div>
+  </li>
+</ol>
+

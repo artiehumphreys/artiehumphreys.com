@@ -8,7 +8,7 @@ export const tocData: TocSection[] = [
     children: [
       {
         title:
-          "Particle Simulation: Improving Performance by 10x With Parallelization",
+          "Particle Simulation: Improving Performance by 20x With Parallelization",
         anchor: "/blog/optimization/particle-simulation",
       },
     ],
