@@ -19,13 +19,13 @@ export const tocData: TocSection[] = [
     children: [
       {
         title: "Find Median From Data Stream: Two Heap Approach",
-        anchor: "median-in-a-stream",
+        anchor: "/blog/wip",
       },
     ],
   },
   {
     title: "Competitive Programming",
-    anchor: "competitive-programming",
+    anchor: "/blog/wip",
     children: [
       { title: "Codeforces Round 1017", anchor: "codeforces-round-1017" },
     ],

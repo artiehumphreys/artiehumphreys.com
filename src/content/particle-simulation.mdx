@@ -123,9 +123,47 @@ optimize this, I implemented a
 <a href="https://www.youtube.com/watch?v=sx4IIQL0x7c" target="_blank">spatial hash grid</a>,
 where each particle belongs to a specific cell in the grid, allowing for more efficient
 collision detection by limiting collision checks to only particles in surrounding cells.
-With this, we go from iterating over all particle pairs to checking each cell and
-surrounding cells, which significantly reduces the number of checks needed as the number 
-of particles grows. We can also tune the size of each cell as needed for maximum performance.
+
+<aside className="my-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+    <div className="mx-2"><strong>Aside - Efficient Particle Storage:</strong> Within my
+    spatial hash grid implementation, I needed a way to efficiently store and manage
+    particles as they moved between cells. Storing a vector of particle references or
+    pointers seems like the most straightforward approach, but it runs into a few
+    issues since references can’t be reseated, and raw pointers would dangle the
+    moment the global particle array resizes or compacts. Instead, each cell stores
+    indices into a single global particle array. Doing this provides stable identifiers
+    and allows for a constant-time erase via the classic swap-and-pop trick: find the
+    index in the cell’s small vector, swap with the last element, and pop. 
+    Here's how I went about implementing this. </div>
+</aside>
+
+```cpp
+struct Grid {
+    std::vector<Cell> cells;
+    struct Cell {
+        std::vector<uint32_t> particleIndices;
+
+        void addParticle(uint32_t idx) { particleIndices.push_back(idx); }
+
+        bool removeParticle(uint32_t idx) {
+          for (auto it = particleIndices.begin(); it != particleIndices.end(); ++it) {
+            if (*it != idx) continue;
+            std::iter_swap(it, particleIndices.end() - 1);
+            particleIndices.pop_back();
+            return true;
+          }
+          return false;
+        }
+    };
+};
+```
+
+<div className="h-5" />
+
+Using this spatial hash grid approach, we go from iterating over all particle pairs to
+checking each cell and surrounding cells, which significantly reduces the number of
+checks needed as the number of particles grows. We can also tune the size of each cell
+as needed for maximum performance.
 
 <aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
     <div className="mx-2"><strong>Aside - Why a Hash Grid?</strong> For this simulator, 
@@ -220,42 +258,252 @@ optimizations that I made to improve performance and scalability.
   neighboring cells and the current cell for potential collisions, it turns out that we only
   need to check 4 of the 8 surrounding cells. To illustrate this, consider the following diagram.
 
-<div className="flex justify-center mt-6">
-  <img
-    src="/blog/naive_grid_search.png"
-    alt="Naive neighborhood with duplicate checks"
-    width="40%"
-  />
-</div>
-<figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
+  <div className="flex justify-center mt-6">
+    <img
+      src="/blog/naive_grid_search.png"
+      alt="Naive neighborhood with duplicate checks"
+      width="40%"
+    />
+  </div>
+  <figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
     Naive neighborhood with duplicate checks.
   </figcaption>
 
+  Here, notice that we are checking all of the neighbors,  redundantly pairing the same 
+  two cells multiple times for the four cells that we are concerned with. For many cells, 
+  this results in unnecessary computations. For an optimized approach, we can simply
+  check only the cells below and to the right. Consider this diagram of our improved
+  cross-cell checking:
 
-Here, notice that we are checking all of the neighbors,  redundantly pairing the same 
-two cells multiple times for the four cells that we are concerned with. For many cells, 
-this results in unnecessary computations. For an optimized approach, we can simply
-check only the cells below and to the right. Consider this diagram of our improved
-cross-cell checking:
+  <div className="flex justify-center mt-6">
+    <img
+      src="/blog/optimized_grid_search.png"
+      alt="Half-stencil without duplicates"
+      width="40%"
+    />
+  </div>
+  <figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
+    Half-stencil check without duplicates
+  </figcaption>
 
-<div className="flex justify-center mt-6">
-  <img
-    src="/blog/optimized_grid_search.png"
-    alt="Half-stencil without duplicates"
-    width="40%"
-  />
-</div>
-<figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
-  Half-stencil check without duplicates
-</figcaption>
+  With this improvement, we reduced our collision checking workload by half, leading to
+  a ~2x performance gain, all while maintaining accurate collision detection. This
+  moved our total particle count from 750 to 1500 while still achieving 60 FPS.
 
-With this improvement, we reduced our collision checking workload by half, leading to
-a ~2x performance gain, all while maintaining accurate collision detection. This
-moved our total particle count from 750 to 1500 while still achieving 60 FPS.
+  <div className="h-5" />
 
-<div className="h-5" />
+  <li>
+    **Sparse-Row Pruning**
+  </li>
 
-<li> **Sparse-Row Pruning**</li>
+  <div className="h-5" />
+
+  On a similar note, it is obvious to see that checking every cell during every iteration is 
+  awfully slow. To address this, we can implement a sparse-row pruning technique. The idea
+  is to keep track of which rows contain particles and only check those rows during each iteration.
+  This significantly reduces the number of cells we need to check, leading to further performance
+  improvements. Within the spatial hash grid, we can maintain the following: a flag for if the row
+  has any particles at all, a count of how many non-empty cells live in that row, and the tight
+  inclusive span $$[\text{rowMinCol}, \text{rowMaxCol}]$$ that brackets the first and last non-empty
+  cell. Every frame, these values are updated incrementally as particles move. This is how I implemented
+  this for when a particle is inserted into and removed from a cell:
+
+  <div className="h-5" />
+
+  ```cpp
+  #include <vector>
+
+  struct Grid {
+    std::vector<Cell> cells;
+    std::vector<uint8_t> rowHasActive;
+    std::vector<uint32_t> rowMinCol;
+    std::vector<uint32_t> rowMaxCol;
+    std::vector<uint32_t> rowNonEmptyCount;
+
+    inline const Cell &at(uint32_t r, uint32_t c) const {
+      return cells[idx(r, c)];
+    }
+
+    void insertParticle(uint32_t idxP, uint32_t x, uint32_t y) {
+      vec2 gi = getGridIndex(x, y);
+      if (!areCoordsValid(static_cast<int32_t>(gi.x), static_cast<int32_t>(gi.y)))
+        return;
+
+      const uint32_t r = static_cast<uint32_t>(gi.y);
+      const uint32_t c = static_cast<uint32_t>(gi.x);
+
+      Cell &cell = at(r, c);
+      const bool wasEmpty = cell.empty();
+      cell.addParticle(idxP);
+
+      if (wasEmpty) {
+        if (rowNonEmptyCount[r]++ == 0) {
+          rowHasActive[r] = 1;
+          rowMinCol[r] = c;
+          rowMaxCol[r] = c;
+        } else {
+          if (c < rowMinCol[r])
+            rowMinCol[r] = c;
+          if (c > rowMaxCol[r])
+            rowMaxCol[r] = c;
+        }
+      }
+    }
+
+    bool removeParticle(uint32_t idxP, uint32_t x, uint32_t y) {
+      vec2 gi = getGridIndex(x, y);
+      if (!areCoordsValid(static_cast<int32_t>(gi.x), static_cast<int32_t>(gi.y)))
+        return false;
+
+      const uint32_t r = static_cast<uint32_t>(gi.y);
+      const uint32_t c = static_cast<uint32_t>(gi.x);
+
+      Cell &cell = at(r, c);
+      const bool removed = cell.removeParticle(idxP);
+      if (!removed) // removal failed
+        return false;
+
+      if (cell.empty()) {
+        const uint32_t cnt = --rowNonEmptyCount[r];
+        if (cnt == 0) {
+          rowHasActive[r] = 0;
+          rowMinCol[r] = 1;
+          rowMaxCol[r] = 0;
+        } else {
+          if (c == rowMinCol[r])
+            recomputeRowMin(r, c + 1);
+          if (c == rowMaxCol[r])
+            recomputeRowMax(r, (c == 0 ? 0u : c - 1));
+        }
+      }
+      return true;
+    }
+  };
+  ```
+  
+  <div className="h-5" />
+
+  Mathematically, this changes the number of cells
+  that we consider each frame from
+  $$
+  \Theta{(N)}
+  $$
+  to
+  $$
+  \Theta{\left(\Sigma_{r \in \text{active rows}} (rowMaxCol[r] - rowMinCol[r] + 1)\right)} = \Theta{(M)}
+  $$
+  where $$M \leq N$$ is the number of non-empty cells in the active rows. This optimization yielded another
+  ~2x performance improvement, allowing us to reach a total of 3000 particles at 60 FPS.
+
+  <div className="h-5" />
+
+  <li>**Parallelizing Collision Detection**</li>
+
+  <div className="h-5" />
+
+  In my opinion, this is the coolest optimization of them all. It took real design work, and I’m happy
+  with where it landed. The core is a single shared MPMC (multi-producer, multi-consumer) work queue
+  protected by a mutex and a condition variable. Any thread can push; any thread can take. Pushing a task
+  increments an atomic in-flight counter and signals the condition variable so sleeping consumers wake promptly.
+  After a task finishes, the in-flight counter is decremented and the condition variable is signaled again, so
+  waiters observe progress immediately. The queue keeps a closed bit as well: once set, consumers wake, drain
+  any remaining tasks, and then exit cleanly when the queue becomes empty. The invariant here is that a frame is
+  considered “done” exactly when queue is empty AND in-flight is zero. That definition is cheap to test and
+  doesn’t require per-task joins.
+
+  <div className="h-5" />
+
+  On top of that queue, a fixed-size thread pool runs a set of worker threads. Each worker loops: sleep when
+  there’s no work, wake on push/close, run a task, account for completion, repeat. Because idling uses the
+  condition variable, there’s no busy-waiting—idle cores truly go idle. The main loop submits a batch of coarse
+  tasks for the current frame (e.g., bands of grid rows), then waits for completion using the same queue
+  semantics. While waiting, it cooperatively drains the queue via the non-blocking path—if a task is available,
+  it runs it immediately; if not, and work is still in flight, it parks on the condition variable and wakes on
+  progress. This shortens the tail of each batch and keeps frame pacing tight without introducing a second
+  synchronization primitive.
+
+  <div className="h-5" />
+
+  **A few implementation details that matter for throughput and correctness:**
+
+    - *Exception safety.* Task execution is wrapped so the in-flight decrement always happens
+    (even if a task throws), keeping the “done” predicate accurate.
+    - *Fairness.* The queue is FIFO at the push/pop level; the main thread is just another
+    consumer—there’s no special priority, only cooperative draining.
+    - *Close semantics.* Closing doesn’t discard pending work; consumers continue popping
+    until empty, then observe closed + empty and exit.
+    - *Coarse tasks.* Submitting row-band jobs (instead of thousands of per-cell jobs)
+    reduces queue contention, improves cache locality, and limits scheduling overhead; combined
+    with your half-stencil and two-stripe passes, no two tasks write the same particles in a pass,
+    so the collision phase remains lock-free.
+
+  <aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+    <div className="mx-2"><strong>Aside - Wavefront Scheduling:</strong> I didn't see any significant
+    improvement in performance with multithreading until I changed what each task looked like. This
+    involved giving each worker a contiguous band of rows (e.g., 2–8 rows) and processing them left-to-right.
+    Then do a second pass offset by one row so cross-row pairs that straddle band boundaries are covered
+    without duplication. In practice this looks like two stripes: pass A handles rows $$$[a, a + 2, \cdots, a + 2k - 2]$$$;
+    pass B handles $$$[a + 1, a + 3, \cdots, a + 2k - 1]$$$; Each band is one coarse task. This led to
+    fewer tasks in the queue compared to each cell being its own task and removing the need for locks within
+    each cell since there is no possibility of cross-cell interference using the two-stripe approach.</div>
+  </aside>
+
+  <div className="h-5" />
+
+  ```cpp
+  #include <vector>
+  #include <algorithm>
+
+  void collideWavefront(uint32_t rowsPerTask = 4) {
+      const uint32_t R = collisionGrid.rows, C = collisionGrid.cols;
+      rowsPerTask = std::max<uint32_t>(1, rowsPerTask);
+
+      auto submitStripe = [&](uint32_t startRow) {
+          std::vector<std::pair<uint32_t,uint32_t>> bands;
+          bands.reserve((R + rowsPerTask - 1) / rowsPerTask);
+
+          for (uint32_t r0 = startRow; r0 < R; r0 += rowsPerTask) {
+              const uint32_t r1 = std::min<uint32_t>(R - 1, r0 + rowsPerTask - 1);
+              // optional: skip fully empty ranges if you maintain row headers per optimization 2
+              // if (!bandHasWork(r0, r1)) continue;
+              bands.emplace_back(r0, r1);
+          }
+          // one task per band
+          for (auto [r0, r1] : bands) {
+              pool.addTask([this, r0, r1, C] { processBand(r0, r1, C); });
+          }
+          pool.waitIdle(); // single barrier for this stripe
+      };
+      submitStripe(0); // rows [0..k-1], [k..2k-1], ...
+      submitStripe(1); // rows [1..k], [k+1..2k], ...
+  }
+```
+
+  <div className="h-5" />
+
+  After implementing this, I saw a ~1.5x performance improvement on my 8-core machine, allowing for
+  simulations with 4500 particles to be run at consistent 60 FPS.
+
+  <div className="h-5" />
+
+  <li>**Flattening Spatial Hash Grid**</li>
+
+  <div className="h-5" />
+
+  The biggest single speedup came from reshaping the grid from a nested ```vector<vector<Cell>>``` to a single,
+  flat row-major array ```vector<Cell>```. This came as a big surprise to me, but makes sense when you consider memory access
+  patterns. In the nested layout, every cell access does two pointer dereferences (row, then column),
+  rows live in separate heap allocations, and traversal bounces around memory. This way, neighbors become
+  fixed-offset indices in one contiguous buffer, leading to much better cache locality. This optimization led to
+  the biggest improvement in performance, around 4x, allowing for up to 15000 randomly generated particles to be simulated
+  at once.
 
 </ol>
 
+<div className="h-5" />
+<div className="h-5" />
+
+I'm incredibly happy with what came out of this project. The source code is on available on 
+<a href="https://github.com/artiehumphreys/particle-simulator" target="_blank">GitHub</a>.
+But, what's next? The goal is to extend this to fluid dynamics in the near future.
+Stay tuned for that.

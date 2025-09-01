@@ -23,8 +23,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ sections }) => {
                 {section.children.map((sub, j) => (
                   <li key={sub.anchor} className="mb-1">
                     <a
-                      href={`${sub.anchor}`}
-                      // href="/blog/wip"
+                      href={i == 0 ? `${sub.anchor}` : `/blog/wip`}
                       className="text-small hover:underline hover:cursor-pointer"
                     >
                       {i + 1}.{j + 1} {sub.title}
