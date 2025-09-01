@@ -4,12 +4,12 @@ import type { TocSection } from "../components/TableOfContents/types";
 export const tocData: TocSection[] = [
   {
     title: "Optimization",
-    anchor: "optimization",
+    anchor: "/blog/optimization",
     children: [
       {
         title:
-          "Particle Simulation: Improving Performance by 10x With Parallelization",
-        anchor: "optimizing-particle-simulation",
+          "Particle Simulation: Improving Performance by 20x With Parallelization",
+        anchor: "/blog/optimization/particle-simulation",
       },
     ],
   },
@@ -19,13 +19,13 @@ export const tocData: TocSection[] = [
     children: [
       {
         title: "Find Median From Data Stream: Two Heap Approach",
-        anchor: "median-in-a-stream",
+        anchor: "/blog/wip",
       },
     ],
   },
   {
     title: "Competitive Programming",
-    anchor: "competitive-programming",
+    anchor: "/blog/wip",
     children: [
       { title: "Codeforces Round 1017", anchor: "codeforces-round-1017" },
     ],
