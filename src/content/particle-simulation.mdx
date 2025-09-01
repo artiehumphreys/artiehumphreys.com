@@ -1,12 +1,15 @@
 <figure className="mb-12">
   <div className="flex justify-center">
     <video
-      src="/blog/demo.mp4"
+      playsInline
       autoPlay
       loop
       muted
+      preload="metadata"
       style={{ width: "60%", height: "100%", borderRadius: 4 }}
-    />
+    >
+      <source src="/blog/demo.mp4" type="video/mp4" />
+    </video>
   </div>
   <figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600">
     Real-time particle simulation with 12,500 particles on a 2020 MacBook Pro (Apple M1, 8-core CPU, 8 GB RAM).
@@ -146,13 +149,13 @@ struct Grid {
         void addParticle(uint32_t idx) { particleIndices.push_back(idx); }
 
         bool removeParticle(uint32_t idx) {
-          for (auto it = particleIndices.begin(); it != particleIndices.end(); ++it) {
-            if (*it != idx) continue;
-            std::iter_swap(it, particleIndices.end() - 1);
-            particleIndices.pop_back();
-            return true;
-          }
-          return false;
+            for (auto it = particleIndices.begin(); it != particleIndices.end(); ++it) {
+                if (*it != idx) continue;
+                std::iter_swap(it, particleIndices.end() - 1);
+                particleIndices.pop_back();
+                return true;
+            }
+            return false;
         }
     };
 };
@@ -314,70 +317,70 @@ optimizations that I made to improve performance and scalability.
   #include <vector>
 
   struct Grid {
-    std::vector<Cell> cells;
-    std::vector<uint8_t> rowHasActive;
-    std::vector<uint32_t> rowMinCol;
-    std::vector<uint32_t> rowMaxCol;
-    std::vector<uint32_t> rowNonEmptyCount;
+      std::vector<Cell> cells;
+      std::vector<uint8_t> rowHasActive;
+      std::vector<uint32_t> rowMinCol;
+      std::vector<uint32_t> rowMaxCol;
+      std::vector<uint32_t> rowNonEmptyCount;
 
-    inline const Cell &at(uint32_t r, uint32_t c) const {
-      return cells[idx(r, c)];
-    }
-
-    void insertParticle(uint32_t idxP, uint32_t x, uint32_t y) {
-      vec2 gi = getGridIndex(x, y);
-      if (!areCoordsValid(static_cast<int32_t>(gi.x), static_cast<int32_t>(gi.y)))
-        return;
-
-      const uint32_t r = static_cast<uint32_t>(gi.y);
-      const uint32_t c = static_cast<uint32_t>(gi.x);
-
-      Cell &cell = at(r, c);
-      const bool wasEmpty = cell.empty();
-      cell.addParticle(idxP);
-
-      if (wasEmpty) {
-        if (rowNonEmptyCount[r]++ == 0) {
-          rowHasActive[r] = 1;
-          rowMinCol[r] = c;
-          rowMaxCol[r] = c;
-        } else {
-          if (c < rowMinCol[r])
-            rowMinCol[r] = c;
-          if (c > rowMaxCol[r])
-            rowMaxCol[r] = c;
-        }
+      inline const Cell &at(uint32_t r, uint32_t c) const {
+          return cells[idx(r, c)];
       }
-    }
 
-    bool removeParticle(uint32_t idxP, uint32_t x, uint32_t y) {
-      vec2 gi = getGridIndex(x, y);
-      if (!areCoordsValid(static_cast<int32_t>(gi.x), static_cast<int32_t>(gi.y)))
-        return false;
+      void insertParticle(uint32_t idxP, uint32_t x, uint32_t y) {
+          vec2 gi = getGridIndex(x, y);
+          if (!areCoordsValid(static_cast<int32_t>(gi.x), static_cast<int32_t>(gi.y)))
+              return;
 
-      const uint32_t r = static_cast<uint32_t>(gi.y);
-      const uint32_t c = static_cast<uint32_t>(gi.x);
+          const uint32_t r = static_cast<uint32_t>(gi.y);
+          const uint32_t c = static_cast<uint32_t>(gi.x);
 
-      Cell &cell = at(r, c);
-      const bool removed = cell.removeParticle(idxP);
-      if (!removed) // removal failed
-        return false;
+          Cell &cell = at(r, c);
+          const bool wasEmpty = cell.empty();
+          cell.addParticle(idxP);
 
-      if (cell.empty()) {
-        const uint32_t cnt = --rowNonEmptyCount[r];
-        if (cnt == 0) {
-          rowHasActive[r] = 0;
-          rowMinCol[r] = 1;
-          rowMaxCol[r] = 0;
-        } else {
-          if (c == rowMinCol[r])
-            recomputeRowMin(r, c + 1);
-          if (c == rowMaxCol[r])
-            recomputeRowMax(r, (c == 0 ? 0u : c - 1));
-        }
+          if (wasEmpty) {
+              if (rowNonEmptyCount[r]++ == 0) {
+                  rowHasActive[r] = 1;
+                  rowMinCol[r] = c;
+                  rowMaxCol[r] = c;
+              } else {
+                  if (c < rowMinCol[r])
+                      rowMinCol[r] = c;
+                  if (c > rowMaxCol[r])
+                      rowMaxCol[r] = c;
+              }
+          }
       }
-      return true;
-    }
+
+      bool removeParticle(uint32_t idxP, uint32_t x, uint32_t y) {
+          vec2 gi = getGridIndex(x, y);
+          if (!areCoordsValid(static_cast<int32_t>(gi.x), static_cast<int32_t>(gi.y)))
+              return false;
+
+          const uint32_t r = static_cast<uint32_t>(gi.y);
+          const uint32_t c = static_cast<uint32_t>(gi.x);
+
+          Cell &cell = at(r, c);
+          const bool removed = cell.removeParticle(idxP);
+          if (!removed) // removal failed
+              return false;
+
+          if (cell.empty()) {
+              const uint32_t cnt = --rowNonEmptyCount[r];
+              if (cnt == 0) {
+                  rowHasActive[r] = 0;
+                  rowMinCol[r] = 1;
+                  rowMaxCol[r] = 0;
+              } else {
+                if (c == rowMinCol[r])
+                    recomputeRowMin(r, c + 1);
+                if (c == rowMaxCol[r])
+                    recomputeRowMax(r, (c == 0 ? 0u : c - 1));
+              }
+          }
+          return true;
+      }
   };
   ```
   
@@ -475,7 +478,7 @@ optimizations that I made to improve performance and scalability.
           pool.waitIdle(); // single barrier for this stripe
       };
       submitStripe(0); // rows [0..k-1], [k..2k-1], ...
-      submitStripe(1); // rows [1..k], [k+1..2k], ...
+      submitStripe(1); // rows [1..k], [k+1..2k-2], ...
   }
 ```
 
