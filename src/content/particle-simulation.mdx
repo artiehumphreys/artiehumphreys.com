@@ -210,10 +210,52 @@ optimizations that I made to improve performance and scalability.
 
 <div className="h-5" />
 
-<ol>
-  <li>
-    <div> **Improved Spatial Hashing.** 
-    The first big improvement that saw a ~2x increase in performance was optimizing the spatial hashing algorithm by using a more efficient grid cell lookup mechanism, reducing unnecessary checks during collision detection. </div>
+<ol> 
+  <li> 
+    **Improved Collision Checking.**
   </li>
+  <div className="h-5" />
+  The first big improvement that saw a ~2x increase in performance was optimizing the collision 
+  detection algorithm by reducing unnecessary cell-neighbor checks. Instead of checking all 8
+  neighboring cells and the current cell for potential collisions, it turns out that we only
+  need to check 4 of the 8 surrounding cells. To illustrate this, consider the following diagram.
+
+<div className="flex justify-center mt-6">
+  <img
+    src="/blog/naive_grid_search.png"
+    alt="Naive neighborhood with duplicate checks"
+    width="40%"
+  />
+</div>
+<figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
+    Naive neighborhood with duplicate checks.
+  </figcaption>
+
+
+Here, notice that we are checking all of the neighbors,  redundantly pairing the same 
+two cells multiple times for the four cells that we are concerned with. For many cells, 
+this results in unnecessary computations. For an optimized approach, we can simply
+check only the cells below and to the right. Consider this diagram of our improved
+cross-cell checking:
+
+<div className="flex justify-center mt-6">
+  <img
+    src="/blog/optimized_grid_search.png"
+    alt="Half-stencil without duplicates"
+    width="40%"
+  />
+</div>
+<figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
+  Half-stencil check without duplicates
+</figcaption>
+
+With this improvement, we reduced our collision checking workload by half, leading to
+a ~2x performance gain, all while maintaining accurate collision detection. This
+moved our total particle count from 750 to 1500 while still achieving 60 FPS.
+
+<div className="h-5" />
+
+<li> **Sparse-Row Pruning**</li>
+
 </ol>
 
