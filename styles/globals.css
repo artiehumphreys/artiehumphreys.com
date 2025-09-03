@@ -15,6 +15,10 @@
       color: theme("colors.blue.800");
     }
   }
+
+  button {
+    cursor: pointer;
+  }
 }
 
 @layer base {
@@ -41,6 +45,6 @@
     -webkit-overflow-scrolling: touch;
   }
   article.prose code {
-    white-space: pre; /* don’t wrap code; let the pre scroll */
+    white-space: pre;
   }
 }

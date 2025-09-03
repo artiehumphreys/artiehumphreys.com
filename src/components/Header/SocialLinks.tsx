@@ -5,17 +5,17 @@ import { Home as HomeIcon, FolderGit2Icon, Mail } from "lucide-react";
 export default function SocialLinks() {
   const links = [
     {
-      icon: <HomeIcon size={18} />,
+      icon: <HomeIcon size={24} />,
       href: "https://artiehumphreys.com",
       label: "Home",
     },
     {
-      icon: <FolderGit2Icon size={18} />,
+      icon: <FolderGit2Icon size={24} />,
       href: "https://github.com/artiehumphreys/artiehumphreys.com-blog",
       label: "GitHub",
     },
     {
-      icon: <Mail size={18} />,
+      icon: <Mail size={24} />,
       href: "mailto:ah.artiehumphreys@gmail.com",
       label: "Email",
     },

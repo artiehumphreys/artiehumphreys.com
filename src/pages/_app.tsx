@@ -1,17 +1,30 @@
+// pages/_app.tsx
+import Head from "next/head";
+import type { AppProps } from "next/app";
 import "../../styles/globals.css";
 import "katex/dist/katex.min.css";
-import type { AppProps } from "next/app";
+
+import { SidebarProvider } from "@/components/Sidebar/SidebarProvider";
+import SidebarOffset from "@/components/Sidebar/SidebarOffset";
+import LeftRailToc from "@/components/LeftRailToc";
+import { tocData } from "@/data/tocData";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <>
-      <title>Artie Humphreys&apos; Blog</title>
-      <meta
-        name="description"
-        content="My personal explorations through the worlds of algorithmic optimization, creation, and beyond."
-      />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <Component {...pageProps} />
-    </>
+    <SidebarProvider defaultOpen={true}>
+      <LeftRailToc sections={tocData} />
+
+      <SidebarOffset>
+        <Head>
+          <title>Artie Humphreys&apos; Blog</title>
+          <meta
+            name="description"
+            content="My personal explorations through the worlds of algorithmic optimization, creation, and beyond."
+          />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+        </Head>
+        <Component {...pageProps} />
+      </SidebarOffset>
+    </SidebarProvider>
   );
 }

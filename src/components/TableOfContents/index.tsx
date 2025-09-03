@@ -1,12 +1,14 @@
 import React from "react";
 import type { TableOfContentsProps } from "./types";
 
-const TableOfContents: React.FC<TableOfContentsProps> = ({ sections }) => {
+const TableOfContents: React.FC<TableOfContentsProps> = ({ sections, heading = true }) => {
   return (
     <nav aria-label="Table of contents" className="font-latex prose my-6">
-      <h2 className="text-3xl font-bold mb-3 pb-2 border-b-2 border-gray-200">
-        Contents
-      </h2>
+      {heading ? (
+        <h2 className="text-3xl font-bold mb-3 pb-2 border-b-2 border-gray-200">
+          Contents
+        </h2>
+      ) : null}
       <ul>
         {sections.map((section, i) => (
           <li key={section.anchor} className="mb-2">

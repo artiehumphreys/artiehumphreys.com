@@ -11,4 +11,5 @@ export interface TocSection {
 
 export interface TableOfContentsProps {
   sections: TocSection[];
+  heading?: boolean;
 }
