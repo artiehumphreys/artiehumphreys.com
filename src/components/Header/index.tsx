@@ -24,7 +24,7 @@ export default function Title({
           onClick={toggle}
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
           aria-pressed={!!open}
-          className="inline-flex h-9 w-9 items-center justify-center text-gray-700 hover:text-gray-900"
+          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
         >
           <Menu size={24} />
         </button>

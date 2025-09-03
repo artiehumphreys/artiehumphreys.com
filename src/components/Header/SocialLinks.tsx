@@ -6,12 +6,12 @@ export default function SocialLinks() {
   const links = [
     {
       icon: <HomeIcon size={24} />,
-      href: "https://artiehumphreys.com",
+      href: "/",
       label: "Home",
     },
     {
       icon: <FolderGit2Icon size={24} />,
-      href: "https://github.com/artiehumphreys/artiehumphreys.com-blog",
+      href: "https://github.com/artiehumphreys/artiehumphreys.com",
       label: "GitHub",
     },
     {

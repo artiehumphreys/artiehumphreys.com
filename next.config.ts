@@ -32,8 +32,8 @@ const mdx = withMDX({
 });
 
 const nextConfig: NextConfig = {
-  basePath: "/blog",
-  assetPrefix: "/blog/",
+  basePath: "",
+  assetPrefix: "/",
   trailingSlash: true,
   output: "export",
   pageExtensions: ["ts", "tsx", "md", "mdx"],
