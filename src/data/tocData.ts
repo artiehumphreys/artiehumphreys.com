@@ -9,7 +9,7 @@ export const tocData: TocSection[] = [
       {
         title:
           "Particle Simulation: Improving Performance by 20x With Parallelization",
-        anchor: "/optimization/particle-simulation",
+        anchor: "/optimization/particle-simulation.html",
       },
     ],
   },
@@ -19,13 +19,13 @@ export const tocData: TocSection[] = [
     children: [
       {
         title: "Find Median From Data Stream: Two Heap Approach",
-        anchor: "/wip",
+        anchor: "/wip.html",
       },
     ],
   },
   {
     title: "Competitive Programming",
-    anchor: "/wip",
+    anchor: "/wip.html",
     children: [
       { title: "Codeforces Round 1017", anchor: "codeforces-round-1017" },
     ],

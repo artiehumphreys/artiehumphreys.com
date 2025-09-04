@@ -34,7 +34,7 @@ const mdx = withMDX({
 const nextConfig: NextConfig = {
   basePath: "",
   assetPrefix: "/",
-  trailingSlash: true,
+  trailingSlash: false,
   output: "export",
   pageExtensions: ["ts", "tsx", "md", "mdx"],
 };
