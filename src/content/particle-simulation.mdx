@@ -380,8 +380,8 @@ Per-row state to maintain (updated as particles move):
 # When inserting a particle at cell (r, c)
 insert:
   - add particle id to Cell(r, c)
+  - increment rowNonEmptyCount[r]
   - if cell was empty before:
-      rowNonEmptyCount[r]: += 1
       rowHasActive[r]: true
       rowMinCol[r]: c
       rowMaxCol[r]: c
@@ -392,15 +392,14 @@ insert:
 # When removing a particle from cell (r, c)
 remove:
   - remove id from Cell(r, c) via swap-and-pop
+  - decrement rowNonEmptyCount[r]
   - if cell became empty:
-      rowNonEmptyCount[r]: -= 1
-      if rowNonEmptyCount[r] == 0:
-        rowHasActive[r]: false
-        rowMinCol[r]: +INF
-        rowMaxCol[r]: -1
-      else:
-        if c == rowMinCol[r]: RecomputeRowMin(r, start=c+1)
-        if c == rowMaxCol[r]: RecomputeRowMax(r, start=c-1)
+      rowHasActive[r]: false
+      rowMinCol[r]: +INF
+      rowMaxCol[r]: -1
+    else:
+      if c == rowMinCol[r]: RecomputeRowMin(r, start=c+1)
+      if c == rowMaxCol[r]: RecomputeRowMax(r, start=c-1)
 ```
 
 {" "}
@@ -442,8 +441,8 @@ increments an atomic in-flight counter and signals the condition variable so sle
 After a task finishes, the in-flight counter is decremented and the condition variable is signaled again, so
 waiters observe progress immediately. The queue keeps a closed bit as well: once set, consumers wake, drain
 any remaining tasks, and then exit cleanly when the queue becomes empty. The invariant here is that a frame is
-considered “done” exactly when queue is empty AND in-flight is zero. That definition is cheap to test and
-doesn’t require per-task joins.
+considered “done” exactly when the work queue is empty AND the in-flight counter is zero. That definition is
+cheap to test and doesn’t require per-task joins.
 
 {" "}
 
@@ -451,7 +450,7 @@ doesn’t require per-task joins.
 
 On top of that queue, a fixed-size thread pool runs a set of worker threads. Each worker loops: sleep when
 there’s no work, wake on push/close, run a task, account for completion, repeat. Because idling uses the
-condition variable, there’s no busy-waiting—idle cores truly go idle. The main loop submits a batch of coarse
+condition variable, there’s no busy-waiting; idle cores truly go idle. The main loop submits a batch of coarse
 tasks for the current frame (e.g., bands of grid rows), then waits for completion using the same queue
 semantics. While waiting, it cooperatively drains the queue via the non-blocking path—if a task is available,
 it runs it immediately; if not, and work is still in flight, it parks on the condition variable and wakes on
@@ -521,8 +520,8 @@ void collideWavefront(uint32_t rowsPerTask = 4) {
         }
         pool.waitIdle(); // single barrier for this stripe
     };
-    submitStripe(0); // rows [0..k-1], [k..2k-1], ...
-    submitStripe(1); // rows [1..k], [k+1..2k-2], ...
+    submitStripe(0); // rows [0, 2, ...]
+    submitStripe(1); // rows [1, 3, ...]
 }
 ```
 

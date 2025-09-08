@@ -1,0 +1,23 @@
+import Link from "next/link";
+
+People throw around the term "big O" a lot in the world of computer science.
+Big O notation as a measure of the efficiency of an algorithm is important, but
+it doesn't always tell the whole story. For example, a linear scan
+through a small array 
+(<a href="https://dirtyhandscoding.wordpress.com/2017/08/25/performance-comparison-linear-search-vs-binary-search/" target="_blank">less than a few hundred elements</a>)
+can be faster than a binary search, even though the binary search is $$O(lg \space n)$$ and the
+linear scan is $$O(n)$$. Big O notation is a useful abstraction for measuring the
+amount of operations performed by an algorithm, but it doesn't always capture
+the real-world performance of an algorithm. Thus, when optimizing code, it's
+important to measure the actual performance of your code and get your hands dirty
+with profiling tools, rather than relying on theory alone.
+
+<div className="h-5" />
+
+Here are some articles I've written on the topic of optimization:
+
+<div className="h-5" />
+
+1.  <Link href="/optimization/particle-simulation.html">
+      Particle Simulation: Improving Performance by 20x With Parallelization
+    </Link>

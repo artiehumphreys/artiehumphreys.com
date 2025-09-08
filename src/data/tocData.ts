@@ -4,7 +4,7 @@ import type { TocSection } from "../components/TableOfContents/types";
 export const tocData: TocSection[] = [
   {
     title: "Optimization",
-    anchor: "/optimization",
+    anchor: "/optimization.html",
     children: [
       {
         title:

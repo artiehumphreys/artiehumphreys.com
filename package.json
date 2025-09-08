@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "preview": "serve out -l 3000"
   },
   "dependencies": {
     "@next/mdx": "^15.5.2",
