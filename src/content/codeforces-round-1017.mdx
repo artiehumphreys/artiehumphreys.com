@@ -38,3 +38,124 @@ problems, so don't be discouraged if you don't immediately see the solution.
 
 <div className="h-5" />
 
+This problem is a bit more involved. We are given an $$n \times n$$ grid of integers with
+1-based indices where each cell contains an integer, $$a_{(i,j)}$$, respresenting
+the $$i+j$$-th element of a permutation $$P$$ of length $$2n$$:
+$$
+a_{(i,j)} = P_{i+j},\quad 1\le i,j\le n.
+$$
+
+We are asked to find the permutation $$P$$ that the grid encodes.
+I think that it helps to start with an example to see if we can find
+any patterns. For $$n = 3$$, a valid grid may look like this:
+$$
+\begin{array}{ccc}
+  1 & 2 & 3 \\
+  2 & 3 & 4 \\
+  3 & 4 & 5 \\
+\end{array}
+$$
+In this example, $$P = [6, 1, 2, 3, 4, 5]$$. To see why, notice that $$a_{(1, 1)} = 1 = P_2$$,
+$$\space a_{(1, 2)} = a_{(2, 1)} = 2 = P_3$$, and so on. From this example, we can derive
+two key observations:
+
+<div className="h-5" />
+
+1. Each diagonal of the grid (from top-left to bottom-right) contains the same integer.
+   This is because each cell in a diagonal has the same sum of indices, $$i+j$$.
+2. The first element of the permutation isn't given in the grid, it is up to us to find
+   the missing element.
+
+<div className="h-5" />
+
+Beginning with the first observation, we can derive a pattern for traversing the grid to collect
+sequential elements of the permutation. We can start at the top-left corner of the grid
+and move rightwards one cell then downwards one cell, collecting the elements along the way. This
+ensures that we process no duplicates since each diagonal is processed exactly once.
+In the above example with $$n=3$$, we would process the cells in this order:
+$$
+(1, 1) \rightarrow (1, 2) \rightarrow (2, 2) \rightarrow (2, 3) \rightarrow (3, 3)
+$$
+That can be easily implemented with a simple loop. The second observation is a bit trickier,
+but can be solved using some math. Instead of trying to find the missing element directly using
+a data structure like a set or boolean array, we can use the formula for the sum of the first
+$$k$$ integers:
+$$
+S_k = \frac{k \cdot (k+1)}{2}
+$$
+As we traverse the grid, we can compute the sum of the elements we encounter, $$S_{grid}$$, and
+then subtract that from the expected sum of the first $$2n$$ integers, $$S_{2n}$$.
+The difference between these two sums is exactly the missing element, which will be the first element
+of the permutation:
+$$
+\text{missing} = S_{2n} - S_{grid}
+$$
+This is a neat trick that avoids the need for extra space and is very efficient. Since we
+traverse $$2n-1$$ cells in the grid, the time complexity of this solution is $$O(n)$$.
+I'm pretty happy with this solution since it is both efficient and elegant. Below is my
+implementation in C++:
+
+<div className="h-5" />
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+int main() {
+    string res = "";
+    int n;
+    cin >> n;
+    int sum = (2 * n) * (2 * n + 1) / 2;
+    vector<vector<int>> grid(n, vector<int>(n));
+ 
+    for (int i = 0; i < n; ++i) {
+      for (int j = 0; j < n; ++j) {
+        cin >> grid[i][j];
+      }
+    }
+    // after iterating, sum will contain the missing element
+    for (int i = 0; i < n; ++i) {
+      sum -= grid[i][i];
+      res += to_string(grid[i][i]) + " ";
+ 
+      if (i + 1 < n) {
+        sum -= grid[i][i + 1];
+        res += to_string(grid[i][i + 1]) + " ";
+      }
+    }
+    res = to_string(sum) + " " + res;
+    cout << res << '\n';
+}
+```
+
+<div className="h-5" />
+
+<b><a style={{ color: 'inherit' }} href="https://codeforces.com/contest/2094/problem/D" target="_blank">D. Tung Tung Sahur</a></b>
+
+<div className="h-5" />
+
+For this problem, we are given a string $$p$$ and a string $$s$$, representing the sequences of
+hits on a drum and the sounds produced, respectively. Each character in the strings is either
+'L' or 'R', indicating a hit on the left or right side of the drum. We need to determine if the
+sequence of hits can produce the sequence of sounds, given that a hit can sound either once or twice.
+Now, consider a sequence of hits on the same side of the drum (e.g., "L" or "RRR"). We can
+deduce the following:
+
+<div className="h-5" />
+
+1. If the length of the corresponding sequence of sounds is greater than twice the length of the hits,
+   it is impossible. For example, "L" cannot produce "LLL" since each hit can sound at most twice.
+2. If the length of the sounds is less than the length of the hits, it is also impossible. For example,
+   "RRR" cannot produce "R" since each hit must sound at least once.
+
+<div className="h-5" />
+
+From these observations, we can derive a simple algorithm to solve the problem. We can iterate
+through the strings, grouping consecutive hits and sounds from the same side of the drum.
+For each group of hits, we check the length of the corresponding group of sounds.
+If the length of the sounds is invalid as described above, we know that it is impossible
+to produce the sounds from the hits. If we reach the end of both of the strings without
+finding any impossible groups, we can conclude that it is possible to produce the sounds
+from the hits. This can be implemented with two pointers, one for each string, and a
+loop that continues until we reach the end of either string. This runs in
+linear time, $$O(n)$$, where $$n$$ is the maximum length of the two strings. The
+implementation follows directly from the above insights, so I won't include it here.
