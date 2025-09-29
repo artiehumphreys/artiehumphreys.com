@@ -27,7 +27,10 @@ export const tocData: TocSection[] = [
     title: "Competitive Programming",
     anchor: "/competitive-programming.html",
     children: [
-      { title: "Codeforces Round 1017", anchor: "/wip.html" },
+      {
+        title: "Codeforces Round 1017",
+        anchor: "/competitive-programming/codeforces-round-1017.html",
+      },
     ],
   },
 ];

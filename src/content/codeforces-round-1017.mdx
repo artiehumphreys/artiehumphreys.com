@@ -1,0 +1,40 @@
+You can view the original problem statements
+<a href="https://codeforces.com/contest/1017" target="_blank">here</a>.
+I encourage you to glance over the problems before reading my solutions.
+
+<div className="h-5" />
+
+<a style={{ color: 'inherit' }} href="https://codeforces.com/contest/2094/problem/A" target="_blank"><b>A. Trippi Troppi</b></a>
+
+<div className="h-5" />
+
+This problem is straightforward. We simply print the first character
+of the three input strings (via ```string::front()```). Nothing crazy here
+since the strings are guaranteed to be non-empty.
+
+<div className="h-5" />
+
+<b><a style={{ color: 'inherit' }} href="https://codeforces.com/contest/2094/problem/B" target="_blank">B. Bobritto Bandito</a></b>
+
+<div className="h-5" />
+
+This problem is also somewhat straightforward. Reducing the problem statement, we are
+given a range $$[l, r]$$ that has been infected over $$n$$ days with $$r - l = n$$.
+We need to determine, given $$m \leq n$$, any valid subrange that overlaps with $$0$$
+since the virus begins there and progresses to neighboring cells from there.
+To ensure that our interval overlaps with $$0$$, we can fix
+our right endpoint to be $$\min(r, m)$$. This ensures that the left endpoint is
+$$\min(r, m) - m \leq 0$$. Thus, our answer is $$[\min(r, m) - m, \min(r, m)]$$.
+
+<div className="h-5" />
+
+This problem took me a while to understand, but the implementation follows easily
+once the insight is found. This will be the case for many competitive programming
+problems, so don't be discouraged if you don't immediately see the solution.
+
+<div className="h-5" />
+
+<b><a style={{ color: 'inherit' }} href="https://codeforces.com/contest/2094/problem/C" target="_blank">C. Brr Brrr Patapim</a></b>
+
+<div className="h-5" />
+
