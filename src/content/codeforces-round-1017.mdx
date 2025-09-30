@@ -1,6 +1,7 @@
 You can view the original problem statements
 <a href="https://codeforces.com/contest/1017" target="_blank">here</a>.
-I encourage you to glance over the problems before reading my solutions.
+I encourage you to glance over the problems before reading my solutions. I was
+able to solve A, B, C, D, and G during the contest.
 
 <div className="h-5" />
 
@@ -99,31 +100,30 @@ implementation in C++:
 
 ```cpp
 #include <bits/stdc++.h>
+
 using namespace std;
+
 int main() {
-    string res = "";
-    int n;
-    cin >> n;
-    int sum = (2 * n) * (2 * n + 1) / 2;
-    vector<vector<int>> grid(n, vector<int>(n));
+  string ans = "";
+  int n;
+  cin >> n;
+  int sum = (2 * n) * (2 * n + 1) / 2;
+  vector<vector<int>> grid(n, vector<int>(n));
  
-    for (int i = 0; i < n; ++i) {
-      for (int j = 0; j < n; ++j) {
-        cin >> grid[i][j];
-      }
-    }
-    // after iterating, sum will contain the missing element
-    for (int i = 0; i < n; ++i) {
-      sum -= grid[i][i];
-      res += to_string(grid[i][i]) + " ";
+  // input logic omitted for brevity
+
+  // after traversing, sum will contain the missing element
+  for (int i = 0; i < n; ++i) {
+    sum -= grid[i][i];
+    ans += to_string(grid[i][i]) + " ";
  
-      if (i + 1 < n) {
-        sum -= grid[i][i + 1];
-        res += to_string(grid[i][i + 1]) + " ";
-      }
+    if (i + 1 < n) {
+      sum -= grid[i][i + 1];
+      ans += to_string(grid[i][i + 1]) + " ";
     }
-    res = to_string(sum) + " " + res;
-    cout << res << '\n';
+  }
+  ans = to_string(sum) + " " + ans;
+  cout << ans << '\n';
 }
 ```
 
@@ -159,3 +159,206 @@ from the hits. This can be implemented with two pointers, one for each string, a
 loop that continues until we reach the end of either string. This runs in
 linear time, $$O(n)$$, where $$n$$ is the maximum length of the two strings. The
 implementation follows directly from the above insights, so I won't include it here.
+
+<div className="h-5" />
+
+<b><a style={{ color: 'inherit' }} href="https://codeforces.com/contest/2094/problem/E" target="_blank">E. Boneca Ambalabu</a></b>
+
+<div className="h-5" />
+
+I was not able to solve this problem in the allotted time during the contest. Here's
+my solution to the problem after the contest ended. We are given an array of $$n$$
+integers and we need to determine the maximum xor sum with respect to a fixed $$a_k$$
+where $$1 \leq k \leq n$$. The xor sum is defined as:
+$$
+S(a_k) = \sum_{i=1}^{n} (a_i \oplus a_k)
+$$
+I will preface by saying that bit manipulation problems are not my strong suit, so I
+struggled with this one. The key insight is to consider the contribution of each bit
+position to the overall xor sum. For each bit position, we can count how many elements
+have that bit set and how many do not. The contribution of that bit position to the xor
+sum can be determined based on whether the bit is set in $$a_k$$ or not. If the bit is
+set in $$a_k$$, the contribution is the number of elements that do not have that bit set,
+multiplied by the value of the bit position and vice versa if the bit is not set in $$a_k$$.
+This follows from the self-inverse property of the xor operation ($$x \oplus x = 0$$).
+To demonstate this with an example, consider the array $$[1, 2, 3]$$ and let $$a_k = 2$$.
+The xor sum is:
+$$
+\begin{align*}
+S(2)
+  &= (1 \oplus 2) + (2 \oplus 2) + (3 \oplus 2) \\
+  &= (\,\texttt{0b01} \oplus \texttt{0b10}\,) + (\,\texttt{0b10} \oplus \texttt{0b10}\,) + (\,\texttt{0b11} \oplus \texttt{0b10}\,) \\
+  &= 3 + 0 + 1 = 4
+\end{align*}
+$$
+We can break this down by bit position. Concretely, beginning with the least significant bit,
+we see that there are two elements with that bit set (1 and 3) and one element without (2).
+Since the least significant bit is not set in $$a_k$$, its contribution to the xor
+sum is $$2 \cdot 2^0 = 2$$. Moving to the next bit, we see that there are two elements with
+that bit set (2, 3) and one element without (1). Since the second bit is set in $$a_k$$,
+its contribution to the xor sum is $$1 \cdot 2^1 = 2$$. Thus, the total xor sum is $$2 + 2 = 4$$,
+which matches our previous calculation. We can implement this by keeping track of the count of elements
+with each bit set in an array of size 30, since the maximum value of $$a_i$$ fits within 30 bits.
+Here's a quick solution in C++:
+
+<div className="h-5" />
+
+```cpp
+#include <bits/stdc++.h>
+
+using namespace std;
+using ll = long long;
+
+int main() {
+  int n;
+  cin >> n;
+  vector<int> a(n);
+  array<int, 30> bit_count = {};
+
+  // input logic omitted for brevity
+
+  ll ans = 0;
+  for (int k = 0; k < n; ++k) {
+    ll curr = 0;
+    for (int j = 0; j < 30; ++j) {
+      bool is_bit_set = (a[k] >> j) & 1;
+      int zero_count = n - bit_count[j];
+      int one_count = bit_count[j];
+      // contribution of j-th bit to xor sum
+      if (is_bit_set) {
+        curr += (1LL << j) * zero_count;
+      } else {
+        curr += (1LL << j) * one_count;
+      }
+    }
+    ans = max(curr, ans);
+  }
+  cout << ans << '\n';
+}
+```
+
+<div className="h-5" />
+
+This approach is much more efficiency than the naive $$O(n^2)$$ solution of computing the
+xor sum for each $$a_k$$ directly. The time complexity of this solution is
+$$O(30 \cdot n) = O(n)$$, which is efficient for the input constraints. This problem is
+incredibly clever and I learned a lot from it.
+
+<div className="h-5" />
+
+<b><a style={{ color: 'inherit' }} href="https://codeforces.com/contest/2094/problem/G" target="_blank">G. Chimpanzini Bananini</a></b>
+
+<div className="h-5" />
+
+I'm going to skip problem F for the time being and instead discuss problem G, which I was
+able to solve during the contest. For this problem, we begin with an initially empty array,
+and we need to process $$q$$ queries of three types:
+
+<div className="h-5" />
+
+1. Perform a cyclic right shift on the array, which moves the last element to the front.
+2. Reverse the entire array.
+3. Append an integer $$x$$ to the end of the array.
+
+<div className="h-5" />
+
+After each operation, we need to output the score of the final array, defined as:
+$$
+S = \sum_{i=1}^{|A|} i \cdot A_i
+$$
+for 1-based indices. The challenge is to efficiently compute the score after
+each operation, as doing so naively would be too slow. Let's look at each operation
+individually to see how it affects the score.
+
+<div className="h-5" />
+
+1. <b>Cyclic Right Shift:</b> This operation moves the last element to the front of the array.
+   The score changes as follows:
+   $$
+    \begin{align*}
+        S' &= 1\cdot A_n + \left(\sum_{i=1}^{n-1} (i+1)\cdot A_i\right) \\
+        &= A_n + \left(\sum_{i=1}^{n-1} i\cdot A_i\right) + \left(\sum_{i=1}^{n-1} A_i\right) \\
+        &= A_n + \left(\sum_{i=1}^{n} i\cdot A_i\right) - A_n + \left(\sum_{i=1}^{n} A_i\right) - n \cdot A_n\\
+        &= S + \left(\sum_{i=1}^{n} A_i\right) - n \cdot A_n
+    \end{align*}
+    $$
+    Thus, the score increases by the sum of all elements minus $$n$$ times the last element. We
+    can maintain the sum of all elements in a variable to compute this efficiently.
+
+<div className="h-5" />
+
+2. <b>Reverse:</b> This operation reverses the entire array. The score changes as follows:
+   $$
+    \begin{align*}
+        S' &= \sum_{i=1}^{n} (n-i+1)\cdot A_i \\
+        &= n\cdot \left(\sum_{i=1}^{n} A_i\right) - \left(\sum_{i=1}^{n} i\cdot A_i\right) + \left(\sum_{i=1}^{n} A_i\right) \\
+        &= n\cdot \left(\sum_{i=1}^{n} A_i\right) - S + \left(\sum_{i=  1}^{n} A_i\right) \\
+        &= (n+1)\cdot \left(\sum_{i=1}^{n} A_i\right) - S
+    \end{align*}
+    $$
+    Again, we can use the maintained sum of all elements to compute this efficiently. We also
+    don't need to actually reverse the array, we can just keep track of whether it is reversed
+    with a boolean flag which will tell us if the last element is at the beginning or front of
+    the array. I hope you're beginning to see a pattern here: given that we can calculate the
+    score of the array without accessing the array at all, the order in which we store the
+    elements doesn't actually matter as long as we can access the first and last elements
+    efficiently. What data structure allows us to do that? A deque!
+
+<div className="h-5" />
+
+3. <b>Append:</b> This operation appends an integer $$x$$ to the end of the array. The score changes
+    as follows:
+   $$
+    \begin{align*}
+        S' &= \sum_{i=1}^{n} i\cdot A_i + (n+1)\cdot x \\
+        &= S + (n+1)\cdot x
+    \end{align*}
+    $$
+    This is straightforward to compute, we just need to ensure that we append to the correct end
+    of the deque based on whether it is reversed or not.
+   
+<div className="h-5" />
+
+Here's how I implemented this in C++:
+
+<div className="h-5" />
+
+```cpp
+#include <bits/stdc++.h>
+
+using namespace std;
+using ll = long long;
+
+int main() {
+  deque<ll> nums;
+  ll S = 0, sum = 0;
+  bool reverse = false; // lazy reverse flag
+
+  int op; cin >> op;
+  switch (op) {
+  case 1: // cyclic right shift
+    ll x;
+    if (reverse) { x = a.front(); a.pop_front(); a.push_back(x); }
+    else { x = a.back(); a.pop_back(); a.push_front(x); }
+    S -= (ll)a.size() * x; // subtract n*x
+    S += sum;
+    break;
+  case 2: // reverse (lazy)
+    S = ((ll)a.size() + 1) * sum - S;
+    rev = !rev;
+    break;
+  case 3: // append x (to logical end)
+    ll x; cin >> x;
+    sum += x;
+    if (reverse) a.push_front(x); else a.push_back(x);
+    S += (ll)a.size() * x;
+    break;
+  }
+  cout << S << '\n';
+  return 0;
+}
+```
+
+<div className="h-5" />
+
+I hope to make more posts like this in the future, so stay tuned!
