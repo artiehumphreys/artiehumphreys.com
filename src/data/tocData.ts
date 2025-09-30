@@ -15,7 +15,7 @@ export const tocData: TocSection[] = [
   },
   {
     title: "Designing Algorithms",
-    anchor: "designing-algorithms",
+    anchor: "/wip.html",
     children: [
       {
         title: "Find Median From Data Stream: Two Heap Approach",
@@ -25,9 +25,12 @@ export const tocData: TocSection[] = [
   },
   {
     title: "Competitive Programming",
-    anchor: "/wip.html",
+    anchor: "/competitive-programming.html",
     children: [
-      { title: "Codeforces Round 1017", anchor: "codeforces-round-1017" },
+      {
+        title: "Codeforces Round 1017",
+        anchor: "/competitive-programming/codeforces-round-1017.html",
+      },
     ],
   },
 ];

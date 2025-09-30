@@ -18,7 +18,7 @@ export default function HeaderToolbar({
   showLeftOnMobile = false,
 }: HeaderToolbarProps) {
   const { open, toggle } = useSidebar();
-
+  const iconSize = 24;
   return (
     <>
       <div
@@ -35,7 +35,7 @@ export default function HeaderToolbar({
           aria-pressed={!!open}
           className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
         >
-          <Menu size={24} />
+          <Menu size={iconSize} />
         </button>
 
         <Link
@@ -43,7 +43,7 @@ export default function HeaderToolbar({
           aria-label="Home"
           className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
         >
-          <Home size={24} />
+          <Home size={iconSize} />
         </Link>
       </div>
 
@@ -55,7 +55,7 @@ export default function HeaderToolbar({
           aria-label="GitHub"
           className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
         >
-          <FolderGit2 size={24} />
+          <FolderGit2 size={iconSize} />
         </a>
 
         <Link
@@ -63,7 +63,7 @@ export default function HeaderToolbar({
           aria-label="Resume"
           className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
         >
-          <FileText size={24} />
+          <FileText size={iconSize} />
         </Link>
 
         <a
@@ -71,7 +71,7 @@ export default function HeaderToolbar({
           aria-label="Email"
           className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
         >
-          <Mail size={24} />
+          <Mail size={iconSize} />
         </a>
       </div>
     </>

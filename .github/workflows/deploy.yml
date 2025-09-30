@@ -33,4 +33,4 @@ jobs:
 
       - name: Sync to S3
         run: |
-          aws s3 sync out/ s3://artiehumphreys.com/ --delete
+          aws s3 sync out/ s3://artiehumphreys.com/
