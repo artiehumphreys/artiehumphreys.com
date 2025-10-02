@@ -19,7 +19,7 @@ Consider the following problem:
   </div>
 </aside>
 
-<div className="mt-4"/>
+<div className="mt-6"/>
 
 Before diving into the problem, I think that it is worth pausing to consider a few possible
 constraints or follow-ups to the problem. For example: what if we only care about the
@@ -80,3 +80,63 @@ to enforce the idea:
 <figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
   Median in odd and even length lists
 </figcaption>
+
+Now that we have a clear idea of how to structure our data, the problem is no
+longer "how do we keep an entire dataset sorted?" but rather "how do we maintain two
+balanced halves and ensure the seam between them remains intact?" This is a far easier
+task. 
+
+<div className="h-5"/>
+
+To achieve this, we can use two heaps: a max-heap for the lower half and a
+min-heap for the upper half. The max-heap gives us instant access to the largest element
+of the lower half, and the min-heap gives us instant access to the smallest element of
+the upper half. By carefully rebalancing after each insertion, we ensure the two heaps
+differ in size by at most one element, meaning that the median is always available in
+constant time: either the top of the larger heap or the average of the two tops if
+they are balanced.
+
+<div className="h-5"/>
+
+One subtlety we need to address in this approach is how to keep the two heaps balanced,
+ensuring that their sizes differ by at most one element. If the total number of elements
+is even, both heaps should contain the same number of items. If the total is odd, we can
+allow one heap (say, the lower half, without loss of generality) to hold a single extra
+element. With this invariant in place, the median will always be easy to retrieve:
+either it is the top of the larger heap, or, when the heaps are the same size, the
+average of their two tops. After every insertion, we check the sizes of the heaps and
+rebalance them if necessary by moving the top element from one heap to the other.
+
+<div className="h-5"/>
+
+I will avoid going into the full implementation details here, it is left as an exercise
+to the reader. What I do want to do, however, is return to the follow-up questions I
+raised at the beginning. In particular: what if we also want to delete elements
+from the stream? Right away, we hit a challenge. Standard heaps are great for
+fast insertions and retrieving the top element, but they do not support efficient
+arbitrary lookups, let alone deletions. So, how do we adapt while keeping our solution
+efficient?
+
+<div className="h-5"/>
+
+Being lazy is surprisingly the answer here. Instead of immediately removing an element
+when a deletion is requested, we can simply mark it as "deleted" in a
+separate data structure, say a hash set. Then, whenever we access the top of a heap,
+either to retrieve the median or to rebalance, we check whether that element has
+been marked as deleted. If it has, we discard it and move to the next element. We
+repeat this until the top of the heap is “clean.”
+
+<div className="h-5"/>
+
+This strategy pushes the cost of deletions onto the moments when we actually need the
+heap tops, rather than every time a deletion is requested. The result is that
+insertions and deletions remain logarithmic on average, while median queries stay
+constant-time. It’s a simple idea, but an elegant example of how we can make an
+otherwise intractable problem efficient.
+
+<div className="h-5"/>
+
+Here's a link to the problem on LeetCode if you want to try it out yourself:
+<a
+  href="https://leetcode.com/problems/find-median-from-data-stream/"
+  target="_blank"> LeetCode: Find Median From Data Stream</a>.
