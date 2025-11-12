@@ -1,2 +1,4 @@
 # artiehumphreys.com
 A blog for content that I find interesting. Written using Next.js, MDX, and tailwind.
+
+[artiehumphreys.com](artiehumphreys.com)
