@@ -1,0 +1,100 @@
+After completing this semester of studies at my university, I found myself
+continuing to ponder the material discussed in my Number Theory course, particularly
+regarding the unit of cryptography, which dove into various public-key cryptosystems,
+like Diffie-Hellman, ElGamal, and RSA. I remember one lecture in particular where
+we briefly discussed the
+<a href="https://en.wikipedia.org/wiki/Discrete_logarithm" target="_blank">Discrete Logarithm Problem</a>
+and how it single-handedly forms the backbone of several cryptosystems. At a high level,
+most of the widely-used encryption schemes today rely on the computational difficulty
+of solving certain mathematical problems, like factoring large integers or computing
+discrete logarithms, as the problem name suggests. This piqued my interest, and I
+decided to explore further the computational efficiency of these systems and how they
+compare to one another. This post may be a bit more math-heavy than my usual fare, but
+my goal is to make the ideas concrete and intuitive, especially where performance and
+design tradeoffs matter.
+
+<div className="h-5"/>
+
+We begin with a brief overview of the RSA cryptosystem. Suppose you want to send me a message,
+encoded as an integer, over a public channel, securely. How can we go about this? We could,
+in theory, send the message directly or use a simple cipher, but an eavesdropper could easily
+intercept and decode it. So, the problem becomes: how can we ensure that only you can read
+the message, even if someone intercepts it? This is the essence of the study of public-key
+cryptography, and where RSA comes into play. In short, we need to provide just enough
+information to allow you to encrypt/decrypt messages, but not enough for an eavesdropper
+to do the same. To do so, we perform the following procedure. Suppose that you are sending me
+a message in this scenario:
+
+<div className="h-5"/>
+
+<ol>
+  <li>
+    I choose two large primes, $p$ and $q$, and compute $n = pq$.
+  </li>
+  <li>
+    I also compute $\varphi(n) = (p-1)(q-1)$. Without going into the weeds of ring theory,
+    this number helps us generate the exponent $e$, which is a random number between $1$ and
+    $\varphi(n)$ with $\gcd(\varphi(n), e) = 1$, meaning they share no divisors.
+  </li>
+  <li>
+    I then calculate $d = e^{-1} \pmod \varphi(n)$ via the
+    <a href="https://cp-algorithms.com/algebra/extended-euclid-algorithm.html" target="_blank">Extended Euclidean Algorithm</a>.
+    This value acts as my private key and will allow me to decrypt messages later.
+  </li>
+  <li>
+    I now publish the public key, $(n, e)$ for you to use.
+  </li>
+  <li>
+    You now encode your message $m$ via $M = m^e \pmod n$, and send me the resulting ciphertext
+    $M$.
+  </li>
+  <li>
+    To decrypt your message, I use my private key and compute:
+    $$
+        M^d \equiv m^{ed} \equiv m^{1+k \cdot \varphi(n)} \equiv m \cdot
+        m^{k \cdot \varphi(n)} \equiv m.
+    $$
+  </li>
+</ol>
+
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+  <div className="mx-2">
+    **Aside: What on earth is that?**
+
+    <div className="mt-2"/>
+
+    What I just outlined may seem like complete nonsense. That's okay! Here are a few
+    notes to hopefully clarify some of the madness.
+
+    <div className="mt-2"/>
+
+    <ol>
+      <li>
+        We use large prime numbers for $p$ and $q$ since factoring $n$ into its
+        original primes is believed to be computationally hard when the primes are
+        sufficiently large.
+      </li>
+      <li>
+        $\varphi$ is <a href="https://mathworld.wolfram.com/TotientFunction.html" target="_blank">Euler's Totient Function</a>.
+        For $n = pq$, $\varphi(n)$ counts the number of integers less than $n$
+        that share no common divisors with $n$. For these numbers, exponentiation
+        $\bmod \, n$ behaves in cycles, and $\varphi(n)$ tells us how long it
+        takes to return to where we started.
+      </li>
+      <li>
+        We require $\gcd(e, \varphi(n)) = 1$ so that a modular inverse $d$ exists.
+        This is what allows the decryption step to undo encryption. Notably, this
+        permits us to perform the second simplification in the above equation.
+      </li>
+      <li>
+        We only share $n$ and $e$ over the public channel. Without knowledge of $d$,
+        an eavesdropper will have a hard time decrypting the message.
+      </li>
+    </ol>
+  </div>
+</aside>
+
+<div className="h-5"/>
+
+This procedure and variants of it are widely used in modern encryption systems. But,
+can we improve upon this at all?
