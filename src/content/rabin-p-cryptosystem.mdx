@@ -52,7 +52,7 @@ a message in this scenario:
     To decrypt your message, I use my private key and compute:
     $$
         M^d \equiv m^{ed} \equiv m^{1+k \cdot \varphi(n)} \equiv m \cdot
-        m^{k \cdot \varphi(n)} \equiv m.
+        m^{k \cdot \varphi(n)} \equiv m \pmod n.
     $$
   </li>
 </ol>
@@ -63,7 +63,7 @@ a message in this scenario:
 
     <div className="mt-2"/>
 
-    What I just outlined may seem like complete nonsense. That's okay! Here are a few
+    What I just outlined may seem like complete nonsense. Here are a few
     notes to hopefully clarify some of the madness.
 
     <div className="mt-2"/>
@@ -97,4 +97,26 @@ a message in this scenario:
 <div className="h-5"/>
 
 This procedure and variants of it are widely used in modern encryption systems. But,
-can we improve upon this at all?
+can we improve upon this at all? While RSA is elegant and robust, modular exponentiation
+on a large scale can be computationally expensive. Although encryption is typically
+fast since the exponent $e$ is usually chosen to be small, commonly being $2^{16} + 1$,
+decryption requires computing $M^d \pmod n$ where $d$ is a large integer of size
+comparable to $n$. Even though some strategies like
+<a href="https://cp-algorithms.com/algebra/binary-exp.html" target="_blank">binary exponentitation</a>
+the cost of decryption grows with the number of bits in $d$, resulting in many
+large-integer multiplications and modular reductions.
+
+<div className="h-5"/>
+
+This raises a natural question: can we design a public-key cryptosystem with similar
+security guarantees, but with a cheaper decryption step? One promising direction comes
+from Rabin-style cryptosystems, which replace exponentiation with squaring: an operation
+that is significantly faster in practice. The tradeoff, however, is that decryption in
+the textbook Rabin cryptosystem leads to four possible plaintext results.
+
+<div className="h-5"/>
+
+This limitation is one of the primary reasons Rabin-style systems are rarely used.
+However, while exploring this design space, I came across a refinement known as the
+Rabin-p cryptosystem that resolves this ambiguity while preserving the efficiency
+benefits of squaring-based decryption.
