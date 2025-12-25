@@ -18,6 +18,10 @@ export const tocData: TocSection[] = [
     anchor: "/designing-algorithms.html",
     children: [
       {
+        title: "Designing an Efficicient Public-Key Cryptosystem: Rabin-p vs. RSA",
+        anchor: "/designing-algorithms/rabin-p-cryptosystem.html",
+      },
+      {
         title: "Find Median From Data Stream: Two Heap Approach",
         anchor: "/designing-algorithms/median-in-stream.html",
       },
