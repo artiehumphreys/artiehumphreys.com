@@ -101,8 +101,8 @@ fast since the exponent $e$ is usually chosen to be small, commonly being $2^{16
 decryption requires computing $M^d \pmod n$ where $d$ is a large integer of size
 comparable to $n$. Even though some strategies like
 <a href="https://cp-algorithms.com/algebra/binary-exp.html" target="_blank">binary exponentiation</a>
-the cost of decryption grows with the number of bits in $d$, resulting in many
-large-integer multiplications and modular reductions.
+reduce the number of operations, the cost of decryption grows with the number of
+bits in $d$, resulting in many large-integer multiplications and modular reductions.
 
 <div className="h-5"/>
 
@@ -131,8 +131,8 @@ Suppose you wish to send me a message over a public channel:
 <ol>
   <li>
     I choose two large primes, $p$ and $q$, satisfying $p \equiv 3 \pmod 4$,
-    $q \equiv 3 \pmod 4$, and compute $n = p^2q$. This is the public key that
-    I publish.
+    $q \equiv 3 \pmod 4$, as well as $2^k < p,q < 2^{k+1}$ for some integer
+    $k$. I then compute $n = p^2q$. This is the public key that I publish.
   </li>
   <li>
     You encode your message $m$ as $M = m^2 \pmod n$, ensuring $\gcd(m, n) = 1$
@@ -165,7 +165,7 @@ Suppose you wish to send me a message over a public channel:
     $j \equiv i \cdot (2m_p)^{-1} \pmod p$.
   </li>
   <li>
-    Using the construction term, I construct a square root modulo $p^2$ via
+    Using the correction term, I construct a square root modulo $p^2$ via
     $m_1 = m_p + jp$. This value is the unique lift of $m_p$ modulo $p^2$
     that satisfies $m_1^2 \equiv M \pmod{p^2}$.
   </li>
@@ -173,8 +173,9 @@ Suppose you wish to send me a message over a public channel:
     As with any square root modulo an odd modulus, exactly two roots modulo
     $p^2$ exist, differing by a sign. This ambiguity
     is combated by enforcing a message size constraint at encryption time. Exactly
-    one of $m_1$ or $p^2 - m_1$ lies in the valid range $[0, 2^{2k-1})$. I therefore
-    return $m = m_1$ if $m_1 < 2^{2k-1}$, and $m = p^2 - m_1$ otherwise.
+    one of $m_1$ or $p^2 - m_1$ lies in the valid range $[0, 2^{2k-1})$ for $k$ as
+    defined above. The decrypted message is $m = m_1$ if $m_1 < 2^{2k-1}$, and
+    $m = p^2 - m_1$ otherwise.
   </li>
 </ol>
 
@@ -218,8 +219,9 @@ Suppose you wish to send me a message over a public channel:
       <li>
         The inverse $(2m_p)^{-1} \pmod p$ always exists because $p$ is odd and
         because $m_p$ and $p$ are coprime ($\gcd(m_p, p) = 1$) by construction
-        of $M$ since $M$ is also coprime with $p$. This guarantees a unique
-        solution $j \pmod p$ and, consequently, a unique lift $m_1 \pmod{p^2}$.
+        of $M$ since $M$ is also guaranteed to be coprime with $p$. This
+        guarantees a unique solution $j \pmod p$ and, consequently, a unique
+        lift $m_1 \pmod{p^2}$.
       </li>
     </ol>
   </div>
@@ -227,4 +229,30 @@ Suppose you wish to send me a message over a public channel:
 
 <div className="h-5"/>
 
-In terms of complexity, however, how does Rabin-p compare to RSA?
+A full proof of correctness of the decryption algorithm can be found in the
+paper cited above.
+
+<div className="h-5"/>
+
+In terms of complexity, however, how does Rabin-p compare to RSA? At a high level,
+both schemes spend most of their time doing arithmetic on large integers. But
+how many multiplications and modular reductions do we need to perform encryption
+and decryption in both schemes? First, we notice that encryption is the simplest
+operation in both schemes, being $O(lg \; e)$ modular multiplications for RSA but
+only a single modular squaring in Rabin-p.
+
+<div className="h-5"/>
+
+For decryption, we see that RSA performs a single modular exponentiation, with
+the exponent $d$ comparable in bit length to $n$. On the other hand, Rabin-p
+performs a single exponentiation modulo $p$, followed by a constant number
+of operations to perform the lift and extract the correct plaintext. Instead
+of doing work modulo $n$, Rabin-p does work modulo $p$.
+
+<div className="h-5"/>
+
+Practically speaking, RSA remains the standard, but Rabin-p provides a different,
+specialized approach to cryptosystems with more structural requirements and more
+logic needed for decryption. It's important to compare and contrast these
+different cryptosystems, as each makes a distinct tradeoff between efficiency,
+generality, and implementation complexity.
