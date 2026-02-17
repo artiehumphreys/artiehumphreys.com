@@ -1,0 +1,17 @@
+Recently, I began working on a primitive graphics library written in C++
+(source code <a href="https://github.com/artiehumphreys/graphics-library" target="_blank">here</a>)
+that can draw, erase, and move shapes on the screen. It's a simple project, but I really
+enjoyed designing both the frontend API and the backend systems. One of my earliest
+design decisions, how the input handler interacted with the render engine, was one that
+piqued my interest and led me down a rabbit hole of concurrent system design. But first,
+let's look at the problem.
+
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+  <div className="mx-2">
+    <strong>Problem:</strong> We need to facilitate communication between the
+    front-facing input handler and the render engine, which draws items on the
+    screen. These are two distinct systems running on different threads, but
+    they must communicate efficiently to minimize input-to-display latency. What
+    system can we use to achieve fast, reliable communication?
+  </div>
+</aside>

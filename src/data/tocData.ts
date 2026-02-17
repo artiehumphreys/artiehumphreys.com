@@ -11,6 +11,10 @@ export const tocData: TocSection[] = [
           "Particle Simulation: Improving Performance by 20x With Parallelization",
         anchor: "/optimization/particle-simulation.html",
       },
+      {
+        title: "Lock-Free Design: Building a High-Performance SPSC Queue",
+        anchor: "/optimization/spsc-queue.html",
+      },
     ],
   },
   {
@@ -18,7 +22,8 @@ export const tocData: TocSection[] = [
     anchor: "/designing-algorithms.html",
     children: [
       {
-        title: "Designing an Efficicient Public-Key Cryptosystem: Rabin-p vs. RSA",
+        title:
+          "Designing an Efficient Public-Key Cryptosystem: Rabin-p vs. RSA",
         anchor: "/designing-algorithms/rabin-p-cryptosystem.html",
       },
       {
