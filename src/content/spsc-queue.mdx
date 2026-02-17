@@ -1,12 +1,12 @@
-Recently, I began working on a primitive graphics library written in C++
-(source code <a href="https://github.com/artiehumphreys/graphics-library" target="_blank">here</a>)
-that can draw, erase, and move shapes on the screen. It's a simple project, but I really
-enjoyed designing both the frontend API and the backend systems. One of my earliest
-design decisions, how the input handler interacted with the render engine, was one that
-piqued my interest and led me down a rabbit hole of concurrent system design. But first,
-let's look at the problem.
+Recently, I began working on a primitive graphics library written in C++ (source
+code [here](https://github.com/artiehumphreys/graphics-library)) that can draw,
+erase, and move shapes on the screen. It's a simple project, but I really
+enjoyed designing both the frontend API and the backend systems. One of my
+earliest design decisions, how the input handler interacted with the render
+engine, was one that piqued my interest and led me down a rabbit hole of
+concurrent system design. But first, let's look at the problem.
 
-<aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+<aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
   <div className="mx-2">
     <strong>Problem:</strong> We need to facilitate communication between the
     front-facing input handler and the render engine, which draws items on the
@@ -15,3 +15,16 @@ let's look at the problem.
     system can we use to achieve fast, reliable communication?
   </div>
 </aside>
+
+A queue is the natural answer here: the input handler pushes events, and the
+render engine drains them. Previously, I built a MPMC (multi-producer,
+multi-consumer) work queue for my
+[particle simulator](https://github.com/artiehumphreys/particle-simulator/blob/main/include/thread_pool/safe_queue.hpp)
+that was protected by a mutex and condition variable. This approach was
+incredibly effective given the problem involved genuine contention with multiple
+threads racing to acquire a shared resource. In this problem, however, with
+exactly one producer thread and one consumer thread, that contention is largely
+absent, making a mutex an unnecessarily heavy primitive. This realization
+naturally pointed me towards a lock-free data structure, which sent me down a
+long-winded journey of learning the secret sauce to the black magic that is
+lock-free programming.
