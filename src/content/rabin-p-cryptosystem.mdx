@@ -1,31 +1,36 @@
 After completing this semester of studies at my university, I found myself
-continuing to ponder the material discussed in my Number Theory course, particularly
-regarding the unit of cryptography, which dove into various public-key cryptosystems,
-like Diffie-Hellman, ElGamal, and RSA. I remember one lecture in particular where
-we briefly discussed the
-<a href="https://en.wikipedia.org/wiki/Discrete_logarithm" target="_blank">Discrete Logarithm Problem</a>
-and how it single-handedly forms the backbone of several cryptosystems. At a high level,
-most of the widely-used encryption schemes today rely on the computational difficulty
-of solving certain mathematical problems, like factoring large integers or computing
-discrete logarithms, as the problem name suggests. This piqued my interest, and I
-decided to explore further the computational efficiency of these systems and how they
-compare to one another. This post may be a bit more math-heavy than my usual fare, but
-my goal is to make the ideas concrete and intuitive, especially where performance and
-design tradeoffs matter.
+continuing to ponder the material discussed in my Number Theory course,
+particularly regarding the unit of cryptography, which dove into various
+public-key cryptosystems, like Diffie-Hellman, ElGamal, and RSA. I remember one
+lecture in particular where we briefly discussed the
 
-<div className="h-5"/>
+<a href="https://en.wikipedia.org/wiki/Discrete_logarithm" target="_blank">
+  Discrete Logarithm Problem
+</a>
+and how it single-handedly forms the backbone of several cryptosystems. At a
+high level, most of the widely-used encryption schemes today rely on the
+computational difficulty of solving certain mathematical problems, like
+factoring large integers or computing discrete logarithms, as the problem name
+suggests. This piqued my interest, and I decided to explore further the
+computational efficiency of these systems and how they compare to one another.
+This post may be a bit more math-heavy than my usual fare, but my goal is to
+make the ideas concrete and intuitive, especially where performance and design
+tradeoffs matter.
 
-We begin with a brief overview of the RSA cryptosystem. Suppose you want to send me a message,
-encoded as an integer, over a public channel, securely. How can we go about this? We could,
-in theory, send the message directly or use a simple cipher, but an eavesdropper could easily
-intercept and decode it. So, the problem becomes: how can we ensure that only you can read
-the message, even if someone intercepts it? This is the essence of the study of public-key
-cryptography, and where RSA comes into play. In short, we need to provide just enough
-information to allow you to encrypt/decrypt messages, but not enough for an eavesdropper
-to do the same. To do so, we perform the following procedure. Suppose you wish to send me
-a message over a public channel:
+<div className="h-5" />
 
-<div className="h-5"/>
+We begin with a brief overview of the RSA cryptosystem. Suppose you want to send
+me a message, encoded as an integer, over a public channel, securely. How can we
+go about this? We could, in theory, send the message directly or use a simple
+cipher, but an eavesdropper could easily intercept and decode it. So, the
+problem becomes: how can we ensure that only you can read the message, even if
+someone intercepts it? This is the essence of the study of public-key
+cryptography, and where RSA comes into play. In short, we need to provide just
+enough information to allow you to encrypt/decrypt messages, but not enough for
+an eavesdropper to do the same. To do so, we perform the following procedure.
+Suppose you wish to send me a message over a public channel:
+
+<div className="h-5" />
 
 <ol>
   <li>
@@ -89,44 +94,58 @@ a message over a public channel:
         an eavesdropper will have a hard time decrypting the message.
       </li>
     </ol>
+
   </div>
 </aside>
 
-<div className="h-5"/>
+<div className="h-5" />
 
-This procedure and variants of it are widely used in modern encryption systems. But,
-can we improve upon this at all? While RSA is elegant and robust, modular exponentiation
-on a large scale can be computationally expensive. Although encryption is typically
-fast since the exponent $e$ is usually chosen to be small, commonly being $2^{16} + 1$,
-decryption requires computing $M^d \pmod n$ where $d$ is a large integer of size
-comparable to $n$. Even though some strategies like
-<a href="https://cp-algorithms.com/algebra/binary-exp.html" target="_blank">binary exponentiation</a>
+This procedure and variants of it are widely used in modern encryption systems.
+But, can we improve upon this at all? While RSA is elegant and robust, modular
+exponentiation on a large scale can be computationally expensive. Although
+encryption is typically fast since the exponent $e$ is usually chosen to be
+small, commonly being $2^{16} + 1$, decryption requires computing $M^d \pmod n$
+where $d$ is a large integer of size comparable to $n$. Even though some
+strategies like
+
+<a href="https://cp-algorithms.com/algebra/binary-exp.html" target="_blank">
+  binary exponentiation
+</a>
 reduce the number of operations, the cost of decryption grows with the number of
-bits in $d$, resulting in many large-integer multiplications and modular reductions.
+bits in $d$, resulting in many large-integer multiplications and modular
+reductions.
 
-<div className="h-5"/>
+<div className="h-5" />
 
-This raises a natural question: can we design a public-key cryptosystem with similar
-security guarantees, but with a cheaper decryption step? One promising direction comes
-from Rabin-style cryptosystems, which replace exponentiation with squaring: an operation
-that is significantly faster in practice. The tradeoff, however, is that decryption in
-the textbook Rabin cryptosystem leads to four possible plaintext results since, for
-$n = pq$, calculating $\sqrt{M} \pmod p$ and $\sqrt{M} \pmod q$ yields two solutions
-each, much like how a positive number has two square roots over the integers. These
-results then combine to create four distinct square roots modulo $n$
-(<a href="https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_(Barrus_and_Clark)/01%3A_Chapters/1.23%3A_Chinese_Remainder_Theorem" target="_blank">Chinese Remainder Theorem</a>).
+This raises a natural question: can we design a public-key cryptosystem with
+similar security guarantees, but with a cheaper decryption step? One promising
+direction comes from Rabin-style cryptosystems, which replace exponentiation
+with squaring: an operation that is significantly faster in practice. The
+tradeoff, however, is that decryption in the textbook Rabin cryptosystem leads
+to four possible plaintext results since, for $n = pq$, calculating
+$\sqrt{M} \pmod p$ and $\sqrt{M} \pmod q$ yields two solutions each, much like
+how a positive number has two square roots over the integers. These results then
+combine to create four distinct square roots modulo $n$
+(<a href="https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_(Barrus_and_Clark)/01%3A_Chapters/1.23%3A_Chinese_Remainder_Theorem" target="_blank">Chinese
+Remainder Theorem</a>).
 
-<div className="h-5"/>
+<div className="h-5" />
 
-This limitation is one of the primary reasons Rabin-style systems are rarely used.
-However, while exploring this design space, I came across a refinement known as the
-Rabin-p cryptosystem that resolves this ambiguity while preserving the efficiency
-benefits of squaring-based decryption. I will again step through the associated
-algorithms for encoding and decoding messages, following the Rabin-p cryptosystem
-as presented in
-<a href="https://mjms.upm.edu.my/fullpaper/2016-August-10(S)/Muhammad%20Asyraf%20Asbullah-1-18.pdf" target="_blank">Asbullah and Ariffin (2016)</a>.
-Suppose you wish to send me a message over a public channel:
-<div className="h-5"/>
+This limitation is one of the primary reasons Rabin-style systems are rarely
+used. However, while exploring this design space, I came across a refinement
+known as the Rabin-p cryptosystem that resolves this ambiguity while preserving
+the efficiency benefits of squaring-based decryption. I will again step through
+the associated algorithms for encoding and decoding messages, following the
+Rabin-p cryptosystem as presented in
+
+<a
+  href="https://mjms.upm.edu.my/fullpaper/2016-August-10(S)/Muhammad%20Asyraf%20Asbullah-1-18.pdf"
+  target="_blank"
+>
+  Asbullah and Ariffin (2016)
+</a>
+. Suppose you wish to send me a message over a public channel:
+<div className="h-5" />
 
 <ol>
   <li>
@@ -179,15 +198,14 @@ Suppose you wish to send me a message over a public channel:
   </li>
 </ol>
 
-
 <aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
   <div className="mx-2">
     **Aside: Notes on Rabin-p**
     <ol>
       <li>
         By restricting $p \equiv 3 \pmod 4$, we can ensure that square roots
-        modulo $p$ can be computed efficiently using a single exponentiation
-        $w^{(p+1)/4} \pmod p$. This avoids the need for square root algorithms.
+        modulo $p$ can be computed efficiently using a single exponentiation $w^
+        {(p + 1) / 4} \pmod p$. This avoids the need for square root algorithms.
       </li>
       <li>
         The value $m_p$ computed in this way satisfies $m_p^2 \equiv M \pmod p$,
@@ -196,63 +214,69 @@ Suppose you wish to send me a message over a public channel:
         to modulo $p^2$ without introducing ambiguity.
       </li>
       <li>
-        The quantity
-        $$
-          i = \frac{M - m_p^2}{p}
-        $$
-        measures the exact discrepancy between $m_p^2$ and $M$ at the next power
-        of $p$. This division is well-defined because $m_p^2 \equiv M \pmod p$ by
-        construction.
+        The quantity $i = \frac{(M - m_p) ^ 2}
+        {p}$ measures the exact discrepancy between $m_p^2$ and $M$ at the next
+        power of $p$. This division is well-defined because $m_p^2 \equiv M
+        \pmod p$ by construction.
       </li>
       <li>
         The correction step $m_1 = m_p + jp$ is an instance of
-        <a href="https://planetmath.org/henselslemmaforintegers" target="_blank">Hensel’s Lemma</a>
-        applied to the polynomial $f(x) = x^2 - M$. Writing a lifted candidate as
-        $x = m_p + jp$ and expanding
-        $(m_p + jp)^2 = m_p^2 + 2m_pjp + j^2p^2 \equiv m_p^2 + 2m_pjp \pmod{p^2}$
-        and matching terms modulo $p^2$ results in the linear congruence
-        $2m_p j \equiv i \pmod p$. A full proof of this equivalence can be found
-        in Lemma 3.3 in
-        <a href="https://mjms.upm.edu.my/fullpaper/2016-August-10(S)/Muhammad%20Asyraf%20Asbullah-1-18.pdf" target="_blank">Asbullah and Ariffin (2016)</a>,
-        as cited above.
+        <a
+          href="https://planetmath.org/henselslemmaforintegers"
+          target="_blank"
+        >
+          Hensel’s Lemma
+        </a>
+        applied to the polynomial $f(x) = x^2 - M$. Writing a lifted candidate
+        as $x = m_p + jp$ and expanding $(m_p + jp)^2 = m_p^2 + 2m_pjp + j^2p^2
+        \equiv m_p^2 + 2m_pjp \pmod{p ^ 2}$ and matching terms modulo $p^2$
+        results in the linear congruence $2m_p j \equiv i \pmod p$. A full proof
+        of this equivalence can be found in Lemma 3.3 in
+        <a
+          href="https://mjms.upm.edu.my/fullpaper/2016-August-10(S)/Muhammad%20Asyraf%20Asbullah-1-18.pdf"
+          target="_blank"
+        >
+          Asbullah and Ariffin (2016)
+        </a>
+        , as cited above.
       </li>
       <li>
         The inverse $(2m_p)^{-1} \pmod p$ always exists because $p$ is odd and
         because $m_p$ and $p$ are coprime ($\gcd(m_p, p) = 1$) by construction
         of $M$ since $M$ is also guaranteed to be coprime with $p$. This
         guarantees a unique solution $j \pmod p$ and, consequently, a unique
-        lift $m_1 \pmod{p^2}$.
+        lift $m_1 \pmod{p ^ 2}$.
       </li>
     </ol>
   </div>
 </aside>
 
-<div className="h-5"/>
+<div className="h-5" />
 
 A full proof of correctness of the decryption algorithm can be found in the
 paper cited above.
 
-<div className="h-5"/>
+<div className="h-5" />
 
-In terms of complexity, however, how does Rabin-p compare to RSA? At a high level,
-both schemes spend most of their time doing arithmetic on large integers. But
-how many multiplications and modular reductions do we need to perform encryption
-and decryption in both schemes? First, we notice that encryption is the simplest
-operation in both schemes, being $O(lg \; e)$ modular multiplications for RSA but
-only a single modular squaring in Rabin-p.
+In terms of complexity, however, how does Rabin-p compare to RSA? At a high
+level, both schemes spend most of their time doing arithmetic on large integers.
+But how many multiplications and modular reductions do we need to perform
+encryption and decryption in both schemes? First, we notice that encryption is
+the simplest operation in both schemes, being $O(lg \; e)$ modular
+multiplications for RSA but only a single modular squaring in Rabin-p.
 
-<div className="h-5"/>
+<div className="h-5" />
 
 For decryption, we see that RSA performs a single modular exponentiation, with
 the exponent $d$ comparable in bit length to $n$. On the other hand, Rabin-p
-performs a single exponentiation modulo $p$, followed by a constant number
-of operations to perform the lift and extract the correct plaintext. Instead
-of doing work modulo $n$, Rabin-p does work modulo $p$.
+performs a single exponentiation modulo $p$, followed by a constant number of
+operations to perform the lift and extract the correct plaintext. Instead of
+doing work modulo $n$, Rabin-p does work modulo $p$.
 
-<div className="h-5"/>
+<div className="h-5" />
 
-Practically speaking, RSA remains the standard, but Rabin-p provides a different,
-specialized approach to cryptosystems with more structural requirements and more
-logic needed for decryption. It's important to compare and contrast these
-different cryptosystems, as each makes a distinct tradeoff between efficiency,
-generality, and implementation complexity.
+Practically speaking, RSA remains the standard, but Rabin-p provides a
+different, specialized approach to cryptosystems with more structural
+requirements and more logic needed for decryption. It's important to compare and
+contrast these different cryptosystems, as each makes a distinct tradeoff
+between efficiency, generality, and implementation complexity.
