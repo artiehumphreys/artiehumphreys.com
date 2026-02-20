@@ -35,7 +35,7 @@ export function SidebarProvider({
 
   const value = useMemo<Ctx>(
     () => ({ open, toggle: () => setOpen((o) => !o), set: setOpen }),
-    [open]
+    [open],
   );
 
   return (

@@ -28,3 +28,97 @@ largely absent, making a mutex an unnecessarily heavy primitive. This
 realization naturally pointed me towards a concurrent data structure without
 mutexes, which sent me down a long-winded journey of learning the secret sauce
 to the black magic that is lock-free programming.
+
+<div className="h-5" />
+
+I found this [CppCon talk](https://youtu.be/K3P_Lmq6pw0?si=jR6dhuYanDYvQN5l) by
+Charles Frasch, which turned out to be exactly what I was looking for and acted
+as a great stepping stone in this process. The discussion outlined a
+single-producer, single-consumer (SPSC) concurrent queue that is free of any
+lock-based structure, operating solely with atomic variables. At its core, the
+underlying data structure at hand is a ring buffer, or a fixed-capacity queue
+that maintains separate read and write indices into a contiguous block of
+memory. The read and write indices are managed using atomic variables to avoid
+the numerous possible race conditions that can occur otherwise with partially
+observed index updates.
+
+<div className="h-5" />
+
+We will begin by enforcing sequentially-consistent memory ordering, where all
+threads agree on a single global order of atomic operations. To do this, we can
+use the following structure for pushing and popping elements, assuming that the
+queue has a capacity of some power of two, allowing for efficient modulo
+calculation via a bitwise and (read more about this
+[here](https://stackoverflow.com/questions/6670715/mod-of-power-2-on-bitwise-operators)).
+Note that pop does not return value as, in our case, the queued item represents
+a command that takes effect upon being dequeued.
+
+<div className="h-5" />
+
+```cpp
+#include <atomic>
+#include <cstddef>
+
+std::atomic_size_t writeIdx_{}, readIdx_{};
+T* buff_;
+std::size_t capacity_; // power of two capacity
+std::size_t mask = capacity_ - 1;
+
+bool push(const T& val) noexcept {
+  std::size_t writeIdx = writeIdx_.load(std::memory_order_seq_cst);
+  std::size_t readIdx = readIdx_.load(std::memory_order_seq_cst);
+  if (writeIdx - readIdx == capacity_) {
+    return false;
+  }
+  std::memcpy(&buff_[writeIdx & mask], &val, sizeof(T));
+  writeIdx_.store(writeIdx + 1, std::memory_order_seq_cst);
+  return true;
+}
+
+bool pop() noexcept {
+  std::size_t writeIdx = writeIdx_.load(std::memory_order_seq_cst);
+  std::size_t readIdx = readIdx_.load(std::memory_order_seq_cst);
+  if (readIdx == writeIdx) {
+    return false;
+  }
+  // destruct object if necessary
+  readIdx_.store(readIdx + 1, std::memory_order_seq_cst);
+  return true;
+}
+```
+
+<div className="h-5" />
+
+This, naturally, is fairly slow and unoptimized. On my ARM machine, sequentially
+consistent memory operations use the `ldar` and `stlr` assembly instructions
+alongside full memory barriers, which prevent the CPU from reordering any
+surrounding memory operations, even those that are unrelated, to ensure that any
+prior writes are globally visible before any subsequent operation proceeds. We
+will see shortly, however, that this approach is overkill. To illustrate this, I
+created a file to test throughput on a basic example, where two threads push and
+pop elements from the queue and spin when there is no work to be done. Across
+$2^{27}$ operations per thread, the throughput results were as follows. Note
+that I compiled with the `-O3` flag.
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Ops per thread} & 134{,}217{,}728 \\
+\text{Time (s)} & 6.286 \\
+\text{Throughput (ops/sec)} & 21{,}351{,}575 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 1: Sequential Consistency}
+$$
+
+<div className="h-5" />
+
+Although this test may not be perfect, it demonstrates the queue's performance
+in a sustained load situation.

@@ -13,12 +13,12 @@ const LeftRailToc = dynamic(() => import("@/components/LeftRailToc"), {
 });
 const SidebarOffset = dynamic(
   () => import("@/components/Sidebar/SidebarOffset"),
-  { ssr: false }
+  { ssr: false },
 );
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={false}>
       <LeftRailToc sections={tocData} />
 
       <SidebarOffset>
