@@ -44,11 +44,24 @@ observed index updates.
 
 <div className="h-5" />
 
+Why even consider a lock-free approach? Mutexes are a tried and true way to
+combat data races in shared resources. However, even in the absence of heavy
+contention, acquiring and releasing a mutex carries inherently overhead. This is
+either a kernel transition or a
+[futex](https://man7.org/linux/man-pages/man2/futex.2.html) operation on every
+push and pop, regardless of whether another thread is actually waiting. With
+only one producer and one consumer, we can mitigate this per-operation cost
+entirely by coordinating directly through atomics.
+
+<div className="h-5" />
+
 We will begin by enforcing sequentially-consistent memory ordering, where all
-threads agree on a single global order of atomic operations. To do this, we can
-use the following structure for pushing and popping elements, assuming that the
-queue has a capacity of some power of two, allowing for efficient modulo
-calculation via a bitwise and (read more about this
+threads agree on a single global order of atomic operations. This is the
+strongest guarantee available, but only needed in extreme cases. However, it is
+a good starting point regardless. To do this, we can use the following structure
+for pushing and popping elements, assuming that the queue has a capacity of some
+power of two, allowing for efficient modulo calculation via a bitwise and (read
+more about this
 [here](https://stackoverflow.com/questions/6670715/mod-of-power-2-on-bitwise-operators)).
 Note that pop does not return value as, in our case, the queued item represents
 a command that takes effect upon being dequeued.
@@ -76,8 +89,8 @@ bool push(const T& val) noexcept {
 }
 
 bool pop() noexcept {
-  std::size_t writeIdx = writeIdx_.load(std::memory_order_seq_cst);
   std::size_t readIdx = readIdx_.load(std::memory_order_seq_cst);
+  std::size_t writeIdx = writeIdx_.load(std::memory_order_seq_cst);
   if (readIdx == writeIdx) {
     return false;
   }
@@ -118,7 +131,52 @@ $$
 \textit{Table 1: Sequential Consistency}
 $$
 
-<div className="h-5" />
+<div className="h-2" />
 
 Although this test may not be perfect, it demonstrates the queue's performance
-in a sustained load situation.
+in a sustained load situation. A natural follow-up is: Can we do any better?
+Before we proceed, I want you to consider what sequentially consistent memory
+ordering actually guarantees and whether we need all of it.
+
+<div className="h-5" />
+
+The answer to the above follow-up is yes. Sequential consistency forces all
+threads to agree on a single global order of every atomic operation which is a
+much stronger guarantee than we actually need. In our SPSC queue, the only
+ordering that matters is between the producer and consumer threads where the
+consumer must not read a slot until the producer's write to that slot is
+visible. Acquire-release semantics guarantee exactly this.
+
+<div className="h-5" />
+
+The mental model is similar to a lock: when you release a mutex, every write you
+made while holding it becomes visible to whoever acquires the mutex next. In the
+context of acquire-release, a store with release semantics ensures that all
+preceding writes, including non-atomic ones (e.g. our call to `memcpy` in the
+snippet above), are visible to any thread that subsequently performs an
+acquire-load of the same atomic variable and observes the stored value.
+Critically, this prevents the compiler and CPU from reordering operations across
+the barrier (for more, see
+[here](https://davekilian.com/acquire-release.html#:~:text=Acquire%20and%20Release%20Semantics%20*%20A%20write%2Drelease,following%20code%20starts%20after%20the%20acquiring%20read.)).
+Without release semantics, the store to `writeIdx_` could be moved ahead of the
+memcpy, meaning that the consumer could see an updated index and read from a
+slot with incomplete data. These semantics provide the same fence-like guarantee
+that mutexes provide without the costly syscalls and context switches.
+
+<div className="h-5" />
+
+Now, we can apply these semantics to our queue. When either thread increments
+its own index (tail for `push()`, head for `pop()`) after completing an
+operation, the store uses release semantics. This ensures that the preceding
+read or write to the buffer slot is visible before the updated index is
+published. The corresponding load of the other thread's index uses acquire
+semantics, establishing the happens-before relationship we need. But, notice
+that each thread owns one of the two indices: the producer only writes one, and
+the consumer writes the other. When a thread loads its own index, there is no
+other writer to synchronize with, so we can further relax the memory constraints
+with which we load the variable. In C++, relaxed memory ordering reports the
+variable as-is, meaning we may obtain a stale value. However, this does not
+break our implementation as, since the indices only increment, the value read
+will act as a lower bound of the given index. The queue may apppear full or
+empty when it isn't, but we can never pop from a truly empty queu or push to a
+truly full one.
