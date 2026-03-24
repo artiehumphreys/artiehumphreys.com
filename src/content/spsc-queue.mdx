@@ -71,6 +71,7 @@ a command that takes effect upon being dequeued.
 ```cpp
 #include <atomic>
 #include <cstddef>
+#include <cstring>
 
 std::atomic_size_t writeIdx_{}, readIdx_{};
 T* buff_;
@@ -103,15 +104,15 @@ bool pop() noexcept {
 <div className="h-5" />
 
 This, naturally, is fairly slow and unoptimized. On my ARM machine, sequentially
-consistent memory operations use the `ldar` and `stlr` assembly instructions
-alongside full memory barriers, which prevent the CPU from reordering any
-surrounding memory operations, even those that are unrelated, to ensure that any
-prior writes are globally visible before any subsequent operation proceeds. We
-will see shortly, however, that this approach is overkill. To illustrate this, I
-created a file to test throughput on a basic example, where two threads push and
-pop elements from the queue and spin when there is no work to be done. Across
-$2^{27}$ operations per thread, the throughput results were as follows. Note
-that I compiled with the `-O3` flag.
+consistent memory operations use the `ldar` and `stlr` assembly instructions,
+which prevent the CPU from reordering any surrounding memory operations, even
+those that are unrelated, to ensure that any prior writes are globally visible
+before any subsequent operation proceeds. We will see shortly, however, that
+this approach is overkill. To illustrate this, I created a file to test
+throughput on a basic example, where two threads push and pop elements from the
+queue and spin when there is no work to be done. Across $2^{27}$ operations per
+thread, the throughput results were as follows. Note that I compiled with the
+`-O3` flag.
 
 <div className="h-5" />
 
@@ -179,4 +180,45 @@ variable as-is, meaning we may obtain a stale value. However, this does not
 break our implementation as, since the indices only increment, the value read
 will act as a lower bound of the given index. The queue may apppear full or
 empty when it isn't, but we can never pop from a truly empty queu or push to a
-truly full one.
+truly full one. On my ARM machine, this distinction matters at the instruction
+level: release operations still compile to `stlr`, relaxed operations compile to
+plain `ldr` and `str`, and, as of ARMv8.3, acquire-loads use `ldapr`: a
+lighter-weight alternative to the `ldar` that sequential consistency requires.
+
+<aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+  <div className="mx-2">
+    **Aside:** `LDAR` vs `LDAPR`
+
+    <div className="mt-2"/>
+
+Both `ldar` and `ldapr` are acquire barriers as neither allows subsequent memory
+operations to reorder before them. The difference is with a preceding store
+operation (`stlr`): `ldar` ensures that the store is visible to all cores before
+the load completes, while `ldapr` lets the load execute before the store is
+visible to other cores, including reading the store's value via forwarding
+without forcing it to become globally observed. For more on this optimization,
+see
+[here](https://developer.arm.com/documentation/dui0801/l/A64-Data-Transfer-Instructions/LDAPR--A64-).
+
+  </div>
+</aside>
+
+Changing the memory orderings in this way leads to the following results:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Ops per thread} & 134{,}217{,}728 \\
+\text{Time (s)} & 4.225 \\
+\text{Throughput (ops/sec)} & 31{,}771{,}221.239 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 2: Improved Memory Ordering}
+$$
