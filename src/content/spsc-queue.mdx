@@ -46,7 +46,7 @@ observed index updates.
 
 Why even consider a lock-free approach? Mutexes are a tried and true way to
 combat data races in shared resources. However, even in the absence of heavy
-contention, acquiring and releasing a mutex carries inherently overhead. This is
+contention, acquiring and releasing a mutex inherently carries overhead. This is
 either a kernel transition or a
 [futex](https://man7.org/linux/man-pages/man2/futex.2.html) operation on every
 push and pop, regardless of whether another thread is actually waiting. With
@@ -136,17 +136,15 @@ $$
 
 Although this test may not be perfect, it demonstrates the queue's performance
 in a sustained load situation. A natural follow-up is: Can we do any better?
-Before we proceed, I want you to consider what sequentially consistent memory
-ordering actually guarantees and whether we need all of it.
 
 <div className="h-5" />
 
-The answer to the above follow-up is yes. Sequential consistency forces all
-threads to agree on a single global order of every atomic operation which is a
-much stronger guarantee than we actually need. In our SPSC queue, the only
-ordering that matters is between the producer and consumer threads where the
-consumer must not read a slot until the producer's write to that slot is
-visible. Acquire-release semantics guarantee exactly this.
+The answer is yes. Sequential consistency forces all threads to agree on a
+single global order of every atomic operation which is a much stronger guarantee
+than we actually need. In our SPSC queue, the only ordering that matters is
+between the producer and consumer threads where the consumer must not read a
+slot until the producer's write to that slot is visible. Acquire-release
+semantics guarantee exactly this.
 
 <div className="h-5" />
 
@@ -159,31 +157,34 @@ acquire-load of the same atomic variable and observes the stored value.
 Critically, this prevents the compiler and CPU from reordering operations across
 the barrier (for more, see
 [here](https://davekilian.com/acquire-release.html#:~:text=Acquire%20and%20Release%20Semantics%20*%20A%20write%2Drelease,following%20code%20starts%20after%20the%20acquiring%20read.)).
-Without release semantics, the store to `writeIdx_` could be moved ahead of the
-memcpy, meaning that the consumer could see an updated index and read from a
-slot with incomplete data. These semantics provide the same fence-like guarantee
-that mutexes provide without the costly syscalls and context switches.
+Without release semantics, the compiler may reorder the store to `writeIdx_`
+ahead of the memcpy, meaning that the consumer could see an updated index and
+read from a slot with incomplete data. The benefit of acquire-release is it
+provides the same fence-like guarantee that mutexes provide without the costly
+syscalls and context switches.
 
 <div className="h-5" />
 
-Now, we can apply these semantics to our queue. When either thread increments
-its own index (tail for `push()`, head for `pop()`) after completing an
-operation, the store uses release semantics. This ensures that the preceding
-read or write to the buffer slot is visible before the updated index is
-published. The corresponding load of the other thread's index uses acquire
-semantics, establishing the happens-before relationship we need. But, notice
-that each thread owns one of the two indices: the producer only writes one, and
-the consumer writes the other. When a thread loads its own index, there is no
-other writer to synchronize with, so we can further relax the memory constraints
-with which we load the variable. In C++, relaxed memory ordering reports the
-variable as-is, meaning we may obtain a stale value. However, this does not
-break our implementation as, since the indices only increment, the value read
-will act as a lower bound of the given index. The queue may apppear full or
-empty when it isn't, but we can never pop from a truly empty queu or push to a
-truly full one. On my ARM machine, this distinction matters at the instruction
-level: release operations still compile to `stlr`, relaxed operations compile to
-plain `ldr` and `str`, and, as of ARMv8.3, acquire-loads use `ldapr`: a
-lighter-weight alternative to the `ldar` that sequential consistency requires.
+Now, we can apply these semantics to our queue. It is important to note that
+both the producer and consumer threads both "own" an index in the sense that
+they each increment one: the producer increments the write index, and the
+consumer increments the read index. When either thread increments its own index
+after completing an operation, the store uses release semantics. This ensures
+that the preceding read or write to the buffer slot is visible before the
+updated index is published. The load of the other thread's index, however, uses
+acquire semantics which ensures that we see all writes that preceded its
+release-store. When a thread loads its own index, there is no other writer to
+synchronize with, so we can further relax the memory constraints with which we
+load the variable. In C++, relaxed memory ordering reports the variable as-is,
+meaning we may obtain a stale value if the other thread increments it. However,
+this does not break our implementation: since the indices only increment, a
+stale read acts as a lower bound of the given index. The queue may apppear full
+or empty when it isn't, but we can never pop from a truly empty queu or push to
+a truly full one. On my ARM machine, this distinction matters at the instruction
+level: relaxed operations compile to plain register load and store instructions
+(`ldr` and `str`), and, as of ARMv8.3, acquire-loads use `ldapr`: a
+lighter-weight alternative to the `ldar` instruction that sequential consistency
+utilizes.
 
 <aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
   <div className="mx-2">
@@ -191,14 +192,14 @@ lighter-weight alternative to the `ldar` that sequential consistency requires.
 
     <div className="mt-2"/>
 
-Both `ldar` and `ldapr` are acquire barriers as neither allows subsequent memory
-operations to reorder before them. The difference is with a preceding store
-operation (`stlr`): `ldar` ensures that the store is visible to all cores before
-the load completes, while `ldapr` lets the load execute before the store is
-visible to other cores, including reading the store's value via forwarding
-without forcing it to become globally observed. For more on this optimization,
-see
-[here](https://developer.arm.com/documentation/dui0801/l/A64-Data-Transfer-Instructions/LDAPR--A64-).
+Both `ldar` and `ldapr` are load-acquire instructions that do not allow
+subsequent memory operations to be reordered before them. The difference lies in
+how they interact with a preceding store operation (`stlr`): `ldar` forces the
+store to be globally visible before the load completes, while `ldapr` allows the
+load to proceed before the store is visible to other cores, including reading
+the store's value directly from the store buffer before it is eventually written
+to L1 cache. For more on this optimization, see
+[here](https://stackoverflow.com/questions/68676666/armv8-3-meaning-of-rcpc).
 
   </div>
 </aside>
