@@ -223,3 +223,86 @@ $$
 $$
 \textit{Table 2: Improved Memory Ordering}
 $$
+
+The question remains: can we do better?
+
+<div className="h-5" />
+
+In fact, we can. To see how, we must understand our queue struct is laid out in
+memory. The member variables are placed contiguously, in the order they were
+declared. If the two atomic indices end up on the same cache line, which, at
+only 8 bytes each, is highly likely, then every time a thread writes to its
+index, the cache coherency protocol invalidates that entire cache line for the
+other core. The other thread's next read, even of a completely different
+variable on that cache line, must then reload the line from a shared level of
+cache or from the other core directly. This is the false sharing problem, and
+can be a significant bottleneck in high-throughput scenarios.
+
+<div className="h-5" />
+
+To mitigate this issue, we can add align and pad our variables so that each
+atomic variable lays at the beginning of one cache line, while the rest of the
+members (size, capacity, etc.) are placed in their own cache line. We can
+accomplish this like so:
+
+<div className="h-5" />
+
+```cpp
+#include <atomic>
+#include <cstddef>
+#include <new>
+
+alignas(
+    std::hardware_destructive_interference_size) std::atomic_size_t readIdx_;
+alignas(
+    std::hardware_destructive_interference_size) std::atomic_size_t writeIdx_;
+// ensure that no other members are stored on this cache line
+char padding[std::hardware_destructive_interference_size -
+             sizeof(std::atomic_size_t)];
+... // rest of the members
+```
+
+<div className="h-5" />
+
+Although this did not improve the throughput of our program by a ton, it's an improvement nonetheless.
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Ops per thread} & 134{,}217{,}728 \\
+\text{Time (s)} & 3.915 \\
+\text{Throughput (ops/sec)} & 34{,}284{,}759.519 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 3: Improved Memory Ordering with Aligned Variables}
+$$
+
+
+<aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+  <div className="mx-2">
+    **Aside:** Premature Optimization
+
+    <div className="mt-2"/>
+
+While writing this article, I attempted to optimize for false sharing using the
+above technique while still using sequentially consistent memory ordering.
+However, to my surprise, this actually decreased throughput compared to
+the initial implementation. Under `seq_cst`, the full memory barrier already
+forces a complete drain of the store buffer on every operation, so the cost of
+cache line invalidation is largely hidden behind the barrier. Padding the
+indices onto separate cache lines only increases the cache footprint without
+offsetting the dominant cost of the barrier itself. The false sharing
+optimization only pays off once we relax to acquire-release, where the
+per-operation cost is low enough for cache line contention to become the
+bottleneck.
+  </div>
+</aside>
+
+<div className="h-5" />
