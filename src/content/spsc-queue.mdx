@@ -110,9 +110,10 @@ those that are unrelated, to ensure that any prior writes are globally visible
 before any subsequent operation proceeds. We will see shortly, however, that
 this approach is overkill. To illustrate this, I created a file to test
 throughput on a basic example, where two threads push and pop elements from the
-queue and spin when there is no work to be done. Across $2^{27}$ operations per
-thread, the throughput results were as follows. Note that I compiled with the
-`-O3` flag.
+queue and spin when there is no work to be done to simulate contention. I stored
+8-bit unsigned intergers in the queue for simplicity. Across $2^{27}$ operations
+per thread, the throughput results were as follows. Note that I compiled with
+the `-O3` flag.
 
 <div className="h-5" />
 
@@ -264,7 +265,8 @@ char padding[std::hardware_destructive_interference_size -
 
 <div className="h-5" />
 
-Although this did not improve the throughput of our program by a ton, it's an improvement nonetheless.
+Although this did not improve the throughput of our program by a ton, it's an
+improvement nonetheless.
 
 <div className="h-5" />
 
@@ -281,9 +283,8 @@ $$
 $$
 
 $$
-\textit{Table 3: Improved Memory Ordering with Aligned Variables}
+\textit{Table 3: Aligned Variables}
 $$
-
 
 <aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
   <div className="mx-2">
@@ -293,16 +294,82 @@ $$
 
 While writing this article, I attempted to optimize for false sharing using the
 above technique while still using sequentially consistent memory ordering.
-However, to my surprise, this actually decreased throughput compared to
-the initial implementation. Under `seq_cst`, the full memory barrier already
-forces a complete drain of the store buffer on every operation, so the cost of
-cache line invalidation is largely hidden behind the barrier. Padding the
-indices onto separate cache lines only increases the cache footprint without
-offsetting the dominant cost of the barrier itself. The false sharing
-optimization only pays off once we relax to acquire-release, where the
-per-operation cost is low enough for cache line contention to become the
-bottleneck.
+However, to my surprise, this actually decreased throughput compared to the
+initial implementation. Under `seq_cst`, the full memory barrier already forces
+a complete drain of the store buffer on every operation, so the cost of cache
+line invalidation is largely hidden behind the barrier. Padding the indices onto
+separate cache lines only increases the cache footprint without offsetting the
+dominant cost of the barrier itself. The false sharing optimization only pays
+off once we relax to acquire-release, where the per-operation cost is low enough
+for cache line contention to become the bottleneck.
+
   </div>
 </aside>
 
+The next optimization takes advantage of a subtle property of the read and write
+indices: they only ever increment. When either thread needs to check the other
+thread's index, it currently performs a costly acquire-load every time. But we
+don't always need to. This strategy, used by many efficient SPSC queue
+implementations including rigtorp's
+[SPSCQueue](https://github.com/rigtorp/SPSCQueue), is to cache the other
+thread's index locally and acquire-load it as infrequently as possible. Consider
+the push method: before writing to the buffer, we check if the queue is full by
+comparing the write index against the read index. Since the read index is only
+ever incremented by the consumer, any cached value of it acts as a lower bound
+for the true value. If the cached value tells us the queue isn't full, we can
+skip the acquire-load entirely. We only need to acquire-load the actual read
+index when the cached value suggests the queue is full. But even then, we fail
+only if the true value confirms it. Applying the same logic to `pop`: caching
+the write index and only acquire-loading it when the queue appears empty, yields
+a roughly 3x increase in throughput:
+
 <div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Ops per thread} & 134{,}217{,}728 \\
+\text{Time (s)} & 1.215 \\
+\text{Throughput (ops/sec)} & 110{,}509{,}923.584 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 4: Cached Index Strategy}
+$$
+
+The last optimization came about while developing the graphics library that this
+queue is a part of. I wanted to support selecting multiple items and moving them
+in unison. Naively, this means one `push` call per item — each with its own
+release-store to the write index. But if we know all the items up front, we can
+`memcpy` them all into the buffer and increment the write index just once,
+taking us from $n$ atomic stores down to one. Using this strategy with the same
+`pop` method as before, the results speak for themselves:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Ops per thread} & 134{,}217{,}728 \\
+\text{Time (s)} & 0.614 \\
+\text{Throughput (ops/sec)} & 218{,}592{,}933.598 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 5: Batched Push}
+$$
+
+<div className="h-2" />
+
+From roughly 21 million ops/sec to over 218 million, I'm very happy with the
+results overall. The code for the graphics library along with the queue is in
+this
+[github repo](https://github.com/artiehumphreys/graphics-library/tree/main).
