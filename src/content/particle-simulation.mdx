@@ -17,29 +17,37 @@
   </figcaption>
 </figure>
 
-The world of physics and mathematics are greatly intertwined. It is very much a two-way
-relationship, where mathematical concepts can be used to describe physical phenomena,
-and physical experiments can lead to new mathematical insights. The goal of this
-project was to explore this relationship by creating a particle simulator, giving
-me the avenue to dive deeper with C++ optimization and object-oriented design in
-hopes of creating something that interests me as a software developer.
+The world of physics and mathematics are greatly intertwined. It is very much a
+two-way relationship, where mathematical concepts can be used to describe
+physical phenomena, and physical experiments can lead to new mathematical
+insights. The goal of this project was to explore this relationship by creating
+a particle simulator, giving me the avenue to dive deeper with C++ optimization
+and object-oriented design in hopes of creating something that interests me as a
+software developer.
 
 <div className="h-5" />
 
-First, I think that it is important to discuss the physics behind the simulation.
-The particles in the simulation are influenced by gravity and also interact with
-each other through collisions. To model this effectively and simply, I chose to use
+First, I think that it is important to discuss the physics behind the
+simulation. The particles in the simulation are influenced by gravity and also
+interact with each other through collisions. To model this effectively and
+simply, I chose to use
+
 <a
   href="https://resources.saylor.org/wwwresources/archived/site/wp-content/uploads/2011/06/MA221-6.1.pdf"
   target="_blank"
->Verlet Integration</a>, as it provided a simple means of approximating the motion of 
-particles in a way that is both efficient and easy to implement. Here's a cool 
-derivation of the equations involved. Feel free to skip over the math if you're not interested.
+>
+  Verlet Integration
+</a>
+, as it provided a simple means of approximating the motion of particles in a
+way that is both efficient and easy to implement. Here's a cool derivation of
+the equations involved. Feel free to skip over the math if you're not
+interested.
 
 <div className="h-5" />
 <div className="h-5" />
 
-Let’s start at the beginning. A particle’s motion is governed by Newton’s second law:
+Let’s start at the beginning. A particle’s motion is governed by Newton’s second
+law:
 
 $$
 \begin{aligned}
@@ -48,12 +56,13 @@ m\,\mathbf{x}''(t) &= \mathbf{F}(\mathbf{x}, t),\\
 \end{aligned}
 $$
 
-In my code, gravity is constant, so $ \mathbf{a}(\mathbf{x}, t) = \langle 0,\, g \rangle $.
+In my code, gravity is constant, so $ \mathbf{a}(\mathbf{x}, t) = \langle 0,\, g
+\rangle $.
 
 <div className="h-5" />
 
-Now expand the position about time $t$ using Taylor series. The general (one-dimensional)
-Taylor formula is
+Now expand the position about time $t$ using Taylor series. The general
+(one-dimensional) Taylor formula is
 
 $$
 f(t+h) \;=\; f(t) + f'(t)\,h + \frac{f''(t)}{2!}\,h^{2}
@@ -80,7 +89,8 @@ $$
   + \mathcal{O}(\Delta t^4),
 $$
 
-where $\mathbf{v}=\mathbf{x}'$ is velocity and $\mathbf{j}=\mathbf{x}'''$ is jerk.
+where $\mathbf{v}=\mathbf{x}'$ is velocity and $\mathbf{j}=\mathbf{x}'''$ is
+jerk.
 
 <div className="h-5" />
 Adding these two expansions together eliminates the velocity and jerk terms:
@@ -100,9 +110,9 @@ $$
 \;}
 $$
 
-This gives us a formula only dependent on the current and previous positions of the
-particle (assuming constant acceleration), simplifying our calculations greatly.
-Here's an outline of how I calculated this for each particle in C++:
+This gives us a formula only dependent on the current and previous positions of
+the particle (assuming constant acceleration), simplifying our calculations
+greatly. Here's an outline of how I calculated this for each particle in C++:
 
 <div className="h-5" />
 
@@ -126,16 +136,19 @@ struct Particle {
 <div className="h-5" />
 <div className="h-5" />
 
-Next, let's discuss some of the design choices I made while implementing the simulator.
-Thinking broadly, noticing collisions between particles is something that seems trivial,
-but doing it efficiently can be complex. A naive approach would be to check every
-particle against every other particle, which is incredibly inefficient when you realize
-that there is no need to check for collisions between distant particles. Thus, to
-optimize this, I implemented a
-<a href="https://www.youtube.com/watch?v=sx4IIQL0x7c" target="_blank">spatial hash grid</a>,
-where each particle belongs to a specific cell in the grid, allowing for more efficient
-collision detection by limiting collision checks to only particles in surrounding
-cells.
+Next, let's discuss some of the design choices I made while implementing the
+simulator. Thinking broadly, noticing collisions between particles is something
+that seems trivial, but doing it efficiently can be complex. A naive approach
+would be to check every particle against every other particle, which is
+incredibly inefficient when you realize that there is no need to check for
+collisions between distant particles. Thus, to optimize this, I implemented a
+
+<a href="https://www.youtube.com/watch?v=sx4IIQL0x7c" target="_blank">
+  spatial hash grid
+</a>
+, where each particle belongs to a specific cell in the grid, allowing for more
+efficient collision detection by limiting collision checks to only particles in
+surrounding cells.
 
 <aside className="my-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
   <div className="mx-2">
@@ -176,10 +189,10 @@ struct Grid {
 
 <div className="h-5" />
 
-Using this spatial hash grid approach, we go from iterating over all particle pairs to
-checking each cell and surrounding cells, which significantly reduces the number of
-checks needed as the number of particles grows. We can also tune the size of each cell
-as needed for maximum performance.
+Using this spatial hash grid approach, we go from iterating over all particle
+pairs to checking each cell and surrounding cells, which significantly reduces
+the number of checks needed as the number of particles grows. We can also tune
+the size of each cell as needed for maximum performance.
 
 <aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
   <div className="mx-2">
@@ -195,18 +208,21 @@ as needed for maximum performance.
 
 <div className="h-5" />
 
-On the collision side of things, handling them efficiently is key. Since square root is a
-costly operation in terms of performance, with a latency of
+On the collision side of things, handling them efficiently is key. Since square
+root is a costly operation in terms of performance, with a latency of
+
 <a
   href="https://developer.arm.com/documentation/100400/0002/floating-point-unit-programmers-model/instruction-throughput-and-latency?lang=en"
   target="_blank"
->up to 32 clock cycles</a>
-on most ARM architectures, using this operation sparingly will be required. To do
-so, we can avoid it altogether by using squared distances instead of actual distances
-when checking for collisions. Concretely, given particles $$p_1$$, $$p_2$$ with centers
-$$c_1$$, $$c_2$$ and radii $$r_1$$, $$r_2$$, we can check for a collision by verifying
-if the squared distance between their centers is less than the squared sum of their
-radii:
+>
+  up to 32 clock cycles
+</a>
+on most ARM architectures, using this operation sparingly will be required. To
+do so, we can avoid it altogether by using squared distances instead of actual
+distances when checking for collisions. Concretely, given particles $$p_1$$,
+$$p_2$$ with centers $$c_1$$, $$c_2$$ and radii $$r_1$$, $$r_2$$, we can check
+for a collision by verifying if the squared distance between their centers is
+less than the squared sum of their radii:
 
 $$
 \|\mathbf{c_1} - \mathbf{c_2}\|^2 < (r_1 + r_2)^2
@@ -220,19 +236,20 @@ $$
 \implies (c_1.x - c_2.x)^2 + (c_1.y - c_2.y)^2 < (r_1 + r_2)^2
 $$
 
-This calculation costs only a few multiplies and is great for when we’re solely concerned
-with whether or not the two particles are touching. Once we determine that two particles
-are indeed colliding, we need to resolve the collision by adjusting their positions and
-velocities accordingly. To do so, we can use the normal vector between the two particles'
-centers to determine the direction of the collision. This can be calculated as follows:
+This calculation costs only a few multiplies and is great for when we’re solely
+concerned with whether or not the two particles are touching. Once we determine
+that two particles are indeed colliding, we need to resolve the collision by
+adjusting their positions and velocities accordingly. To do so, we can use the
+normal vector between the two particles' centers to determine the direction of
+the collision. This can be calculated as follows:
 
 $$
 \mathbf{n} = \frac{\mathbf{c_1} - \mathbf{c_2}}{\|\mathbf{c_1} - \mathbf{c_2}\|} = \frac{\mathbf{c_1} - \mathbf{c_2}}{\sqrt{(c_1.x - c_2.x)^2 + (c_1.y - c_2.y)^2}}
 $$
 
-We can then calculate the overlap to push each particle by half the overlap in opposite
-directions with respect to the normal vector calculated above. In C++, this can be
-implemented as follows:
+We can then calculate the overlap to push each particle by half the overlap in
+opposite directions with respect to the normal vector calculated above. In C++,
+this can be implemented as follows:
 
 <div className="h-5" />
 
@@ -262,24 +279,26 @@ void solveCollision(Particle &p1, Particle &p2) {
 
 <div className="h-5" />
 
-Now, we only use the square root operation when necessary and handle collisions correctly.
+Now, we only use the square root operation when necessary and handle collisions
+correctly.
 
 <div className="h-5" />
 <div className="h-5" />
 
-With all of this in place, I was able to achieve a real-time simulation with around 750 particles
-running at 60 FPS before hitting the performance limits of my hardware. This is a far way
-from achieving my goal of 15,000 particles, but it’s a promising start. Now, let's look at the
-optimizations that I made to improve performance and scalability.
+With all of this in place, I was able to achieve a real-time simulation with
+around 750 particles running at 60 FPS before hitting the performance limits of
+my hardware. This is a far way from achieving my goal of 15,000 particles, but
+it’s a promising start. Now, let's look at the optimizations that I made to
+improve performance and scalability.
 
 <div className="h-5" />
 
-<ol> 
-  <li> 
+<ol>
+  <li>
     **Improved Collision Checking.**
   </li>
   <div className="h-5" />
-  The first big improvement that saw a ~2x increase in performance was optimizing the collision 
+  The first big improvement that saw a ~2x increase in performance was optimizing the collision
   detection algorithm by reducing unnecessary cell-neighbor checks. Instead of checking all 8
   neighboring cells and the current cell for potential collisions, it turns out that we only
   need to check 4 of the 8 surrounding cells. To illustrate this, consider the following diagram.
@@ -297,11 +316,11 @@ optimizations that I made to improve performance and scalability.
   Naive neighborhood with duplicate checks.
 </figcaption>
 
-Here, notice that we are checking all of the neighbors, redundantly pairing the same
-two cells multiple times for the four cells that we are concerned with. For many cells,
-this results in unnecessary computations. For an optimized approach, we can simply
-check only the cells below and to the right. Consider this diagram of our improved
-cross-cell checking:
+Here, notice that we are checking all of the neighbors, redundantly pairing the
+same two cells multiple times for the four cells that we are concerned with. For
+many cells, this results in unnecessary computations. For an optimized approach,
+we can simply check only the cells below and to the right. Consider this diagram
+of our improved cross-cell checking:
 
 {" "}
 
@@ -316,9 +335,10 @@ cross-cell checking:
   Half-stencil check without duplicates
 </figcaption>
 
-With this improvement, we reduced our collision checking workload by half, leading to
-a ~2x performance gain, all while maintaining accurate collision detection. This
-moved our total particle count from 750 to 1500 while still achieving 60 FPS.
+With this improvement, we reduced our collision checking workload by half,
+leading to a ~2x performance gain, all while maintaining accurate collision
+detection. This moved our total particle count from 750 to 1500 while still
+achieving 60 FPS.
 
 {" "}
 
@@ -332,9 +352,10 @@ moved our total particle count from 750 to 1500 while still achieving 60 FPS.
 
 <div className="h-5" />
 
-On a similar note, one problem that I ran into was a performance bottleneck regarding grid cell
-checks, similar to the one described above. Scanning every cell every frame is just too expensive.
-Profiling with `sample` showed the hotspot clearly:
+On a similar note, one problem that I ran into was a performance bottleneck
+regarding grid cell checks, similar to the one described above. Scanning every
+cell every frame is just too expensive. Profiling with `sample` showed the
+hotspot clearly:
 
 <div className="h-5" />
 
@@ -357,15 +378,18 @@ Call graph:
 
 <div className="h-5" />
 
-Notice how over half of the frames in the simulation were spent checking grid neighbors, some of which 
-had no particles present. To address this, we can implement a active-row pruning technique. The idea
-is to keep track of which rows contain particles and only check those rows during each iteration.
-This significantly reduces the number of cells we need to check, leading to further performance
-improvements. Within the spatial hash grid, we can maintain the following: a flag for if the row
-has any particles at all, a count of how many non-empty cells live in that row, and the tight
-inclusive span $$[\text{rowMinCol}, \text{rowMaxCol}]$$ that brackets the first and last non-empty
-cell. Every frame, these values are updated incrementally as particles move. This is how I implemented
-this for when a particle is inserted into and removed from a cell:
+Notice how over half of the frames in the simulation were spent checking grid
+neighbors, some of which had no particles present. To address this, we can
+implement a active-row pruning technique. The idea is to keep track of which
+rows contain particles and only check those rows during each iteration. This
+significantly reduces the number of cells we need to check, leading to further
+performance improvements. Within the spatial hash grid, we can maintain the
+following: a flag for if the row has any particles at all, a count of how many
+non-empty cells live in that row, and the tight inclusive span
+$$[\text{rowMinCol}, \text{rowMaxCol}]$$ that brackets the first and last
+non-empty cell. Every frame, these values are updated incrementally as particles
+move. This is how I implemented this for when a particle is inserted into and
+removed from a cell:
 
 {" "}
 
@@ -373,9 +397,10 @@ this for when a particle is inserted into and removed from a cell:
 
 ```yaml
 Per-row state to maintain (updated as particles move):
-- rowHasActive[r]: whether row r has any non-empty cells.
-- rowNonEmptyCount[r]: number of non-empty cells in row r.
-- rowMinCol[r], rowMaxCol[r]: tight inclusive span of non-empty columns in row r.
+  - rowHasActive[r]: whether row r has any non-empty cells.
+  - rowNonEmptyCount[r]: number of non-empty cells in row r.
+  - rowMinCol[r], rowMaxCol[r]:
+      tight inclusive span of non-empty columns in row r.
 
 # When inserting a particle at cell (r, c)
 insert:
@@ -406,8 +431,8 @@ remove:
 
 <div className="h-5" />
 
-Mathematically, this changes the number of cells
-that we consider each frame from
+Mathematically, this changes the number of cells that we consider each frame
+from
 
 $$
 \Theta{(N)}
@@ -419,8 +444,9 @@ $$
 \Theta{\left(\Sigma_{r \in \text{active rows}} (rowMaxCol[r] - rowMinCol[r] + 1)\right)} = \Theta{(M)}
 $$
 
-where $$M \leq N$$ is the number of non-empty cells in the active rows. This optimization yielded another
-~2x performance improvement, allowing us to reach a total of 3000 particles at 60 FPS.
+where $$M \leq N$$ is the number of non-empty cells in the active rows. This
+optimization yielded another ~2x performance improvement, allowing us to reach a
+total of 3000 particles at 60 FPS.
 
 {" "}
 
@@ -434,28 +460,33 @@ where $$M \leq N$$ is the number of non-empty cells in the active rows. This opt
 
 <div className="h-5" />
 
-In my opinion, this is the coolest optimization of them all. It took real design work, and I’m happy
-with where it landed. The core is a single shared MPMC (multi-producer, multi-consumer) work queue
-protected by a mutex and a condition variable. Any thread can push; any thread can take. Pushing a task
-increments an atomic in-flight counter and signals the condition variable so sleeping consumers wake promptly.
-After a task finishes, the in-flight counter is decremented and the condition variable is signaled again, so
-waiters observe progress immediately. The queue keeps a closed bit as well: once set, consumers wake, drain
-any remaining tasks, and then exit cleanly when the queue becomes empty. The invariant here is that a frame is
-considered “done” exactly when the work queue is empty AND the in-flight counter is zero. That definition is
-cheap to test and doesn’t require per-task joins.
+In my opinion, this is the coolest optimization of them all. It took real design
+work, and I’m happy with where it landed. The core is a single shared MPMC
+(multi-producer, multi-consumer) work queue protected by a mutex and a condition
+variable. Any thread can push; any thread can take. Pushing a task increments an
+atomic in-flight counter and signals the condition variable so sleeping
+consumers wake promptly. After a task finishes, the in-flight counter is
+decremented and the condition variable is signaled again, so waiters observe
+progress immediately. The queue keeps a closed bit as well: once set, consumers
+wake, drain any remaining tasks, and then exit cleanly when the queue becomes
+empty. The invariant here is that a frame is considered “done” exactly when the
+work queue is empty AND the in-flight counter is zero. That definition is cheap
+to test and doesn’t require per-task joins.
 
 {" "}
 
 <div className="h-5" />
 
-On top of that queue, a fixed-size thread pool runs a set of worker threads. Each worker loops: sleep when
-there’s no work, wake on push/close, run a task, account for completion, repeat. Because idling uses the
-condition variable, there’s no busy-waiting; idle cores truly go idle. The main loop submits a batch of coarse
-tasks for the current frame (e.g., bands of grid rows), then waits for completion using the same queue
-semantics. While waiting, it cooperatively drains the queue via the non-blocking path—if a task is available,
-it runs it immediately; if not, and work is still in flight, it parks on the condition variable and wakes on
-progress. This shortens the tail of each batch and keeps frame pacing tight without introducing a second
-synchronization primitive.
+On top of that queue, a fixed-size thread pool runs a set of worker threads.
+Each worker loops: sleep when there’s no work, wake on push/close, run a task,
+account for completion, repeat. Because idling uses the condition variable,
+there’s no busy-waiting; idle cores truly go idle. The main loop submits a batch
+of coarse tasks for the current frame (e.g., bands of grid rows), then waits for
+completion using the same queue semantics. While waiting, it cooperatively
+drains the queue via the non-blocking path—if a task is available, it runs it
+immediately; if not, and work is still in flight, it parks on the condition
+variable and wakes on progress. This shortens the tail of each batch and keeps
+frame pacing tight without introducing a second synchronization primitive.
 
 {" "}
 
@@ -471,7 +502,7 @@ synchronization primitive.
     until empty, then observe closed + empty and exit.
     - *Coarse tasks.* Submitting row-band jobs (instead of thousands of per-cell jobs)
     reduces queue contention, improves cache locality, and limits scheduling overhead; combined
-    with the half-stencil grid checks and two-stripe passes, no two tasks write the same 
+    with the half-stencil grid checks and two-stripe passes, no two tasks write the same
     particles in a pass, so the collision phase remains lock-free.
 
 {" "}
@@ -529,8 +560,9 @@ void collideWavefront(uint32_t rowsPerTask = 4) {
 
 <div className="h-5" />
 
-After implementing this, I saw a ~1.5x performance improvement on my 8-core machine, allowing for
-simulations with 4500 particles to be run at consistent 60 FPS.
+After implementing this, I saw a ~1.5x performance improvement on my 8-core
+machine, allowing for simulations with 4500 particles to be run at consistent 60
+FPS.
 
 {" "}
 
@@ -544,20 +576,26 @@ simulations with 4500 particles to be run at consistent 60 FPS.
 
 <div className="h-5" />
 
-The biggest single speedup came from reshaping the grid from a nested `vector<vector<Cell>>` to a single,
-flat row-major array `vector<Cell>`. This came as a big surprise to me, but makes sense when you consider memory access
-patterns. In the nested layout, every cell access does two pointer dereferences (row, then column),
-rows live in separate heap allocations, and traversal bounces around memory. This way, neighbors become
-fixed-offset indices in one contiguous buffer, leading to much better cache locality. This optimization led to
-the biggest improvement in performance, around 4x, allowing for up to 15000 randomly generated particles to be simulated
-at once.
+The biggest single speedup came from reshaping the grid from a nested
+`vector<vector<Cell>>` to a single, flat row-major array `vector<Cell>`. This
+came as a big surprise to me, but makes sense when you consider memory access
+patterns. In the nested layout, every cell access does two pointer dereferences
+(row, then column), rows live in separate heap allocations, and traversal
+bounces around memory. This way, neighbors become fixed-offset indices in one
+contiguous buffer, leading to much better cache locality. This optimization led
+to the biggest improvement in performance, around 4x, allowing for up to 15000
+randomly generated particles to be simulated at once.
 
 </ol>
 
 <div className="h-5" />
 <div className="h-5" />
 
-I'm incredibly happy with what came out of this project. The source code is on available on
-<a href="https://github.com/artiehumphreys/particle-simulator" target="_blank">GitHub</a>.
-But, what's next? The goal is to extend this to fluid dynamics in the near future.
-Stay tuned for that.
+I'm incredibly happy with what came out of this project. The source code is on
+available on
+
+<a href="https://github.com/artiehumphreys/particle-simulator" target="_blank">
+  GitHub
+</a>
+. But, what's next? The goal is to extend this to fluid dynamics in the near
+future. Stay tuned for that.

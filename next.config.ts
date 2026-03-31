@@ -4,6 +4,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
+import rehypeExternalLinks from "rehype-external-links";
 import type { NextConfig } from "next";
 
 const mdx = withMDX({
@@ -11,6 +12,7 @@ const mdx = withMDX({
   options: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [
+      [rehypeExternalLinks, { target: "_blank", rel: ["noopener", "noreferrer"] }],
       rehypeKatex,
       rehypeSlug,
       [
