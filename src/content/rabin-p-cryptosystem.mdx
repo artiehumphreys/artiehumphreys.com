@@ -3,10 +3,7 @@ continuing to ponder the material discussed in my Number Theory course,
 particularly regarding the unit of cryptography, which dove into various
 public-key cryptosystems, like Diffie-Hellman, ElGamal, and RSA. I remember one
 lecture in particular where we briefly discussed the
-
-<a href="https://en.wikipedia.org/wiki/Discrete_logarithm" target="_blank">
-  Discrete Logarithm Problem
-</a>
+[Discrete Logarithm Problem](https://en.wikipedia.org/wiki/Discrete_logarithm)
 and how it single-handedly forms the backbone of several cryptosystems. At a
 high level, most of the widely-used encryption schemes today rely on the
 computational difficulty of solving certain mathematical problems, like
@@ -107,10 +104,7 @@ encryption is typically fast since the exponent $e$ is usually chosen to be
 small, commonly being $2^{16} + 1$, decryption requires computing $M^d \pmod n$
 where $d$ is a large integer of size comparable to $n$. Even though some
 strategies like
-
-<a href="https://cp-algorithms.com/algebra/binary-exp.html" target="_blank">
-  binary exponentiation
-</a>
+[binary exponentiation](https://cp-algorithms.com/algebra/binary-exp.html)
 reduce the number of operations, the cost of decryption grows with the number of
 bits in $d$, resulting in many large-integer multiplications and modular
 reductions.
@@ -126,8 +120,7 @@ to four possible plaintext results since, for $n = pq$, calculating
 $\sqrt{M} \pmod p$ and $\sqrt{M} \pmod q$ yields two solutions each, much like
 how a positive number has two square roots over the integers. These results then
 combine to create four distinct square roots modulo $n$
-(<a href="https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_(Barrus_and_Clark)/01%3A_Chapters/1.23%3A_Chinese_Remainder_Theorem" target="_blank">Chinese
-Remainder Theorem</a>).
+([Chinese Remainder Theorem](https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_(Barrus_and_Clark)/01%3A_Chapters/1.23%3A_Chinese_Remainder_Theorem)).
 
 <div className="h-5" />
 
@@ -137,14 +130,8 @@ known as the Rabin-p cryptosystem that resolves this ambiguity while preserving
 the efficiency benefits of squaring-based decryption. I will again step through
 the associated algorithms for encoding and decoding messages, following the
 Rabin-p cryptosystem as presented in
-
-<a
-  href="https://mjms.upm.edu.my/fullpaper/2016-August-10(S)/Muhammad%20Asyraf%20Asbullah-1-18.pdf"
-  target="_blank"
->
-  Asbullah and Ariffin (2016)
-</a>
-. Suppose you wish to send me a message over a public channel:
+[Asbullah and Ariffin (2016)](https://mjms.upm.edu.my/fullpaper/2016-August-10(S)/Muhammad%20Asyraf%20Asbullah-1-18.pdf).
+Suppose you wish to send me a message over a public channel:
 <div className="h-5" />
 
 <ol>

@@ -31,17 +31,10 @@ First, I think that it is important to discuss the physics behind the
 simulation. The particles in the simulation are influenced by gravity and also
 interact with each other through collisions. To model this effectively and
 simply, I chose to use
-
-<a
-  href="https://resources.saylor.org/wwwresources/archived/site/wp-content/uploads/2011/06/MA221-6.1.pdf"
-  target="_blank"
->
-  Verlet Integration
-</a>
-, as it provided a simple means of approximating the motion of particles in a
-way that is both efficient and easy to implement. Here's a cool derivation of
-the equations involved. Feel free to skip over the math if you're not
-interested.
+[Verlet Integration](https://resources.saylor.org/wwwresources/archived/site/wp-content/uploads/2011/06/MA221-6.1.pdf),
+as it provided a simple means of approximating the motion of particles in a way
+that is both efficient and easy to implement. Here's a cool derivation of the
+equations involved. Feel free to skip over the math if you're not interested.
 
 <div className="h-5" />
 <div className="h-5" />
@@ -142,12 +135,9 @@ that seems trivial, but doing it efficiently can be complex. A naive approach
 would be to check every particle against every other particle, which is
 incredibly inefficient when you realize that there is no need to check for
 collisions between distant particles. Thus, to optimize this, I implemented a
-
-<a href="https://www.youtube.com/watch?v=sx4IIQL0x7c" target="_blank">
-  spatial hash grid
-</a>
-, where each particle belongs to a specific cell in the grid, allowing for more
-efficient collision detection by limiting collision checks to only particles in
+[spatial hash grid](https://www.youtube.com/watch?v=sx4IIQL0x7c), where each
+particle belongs to a specific cell in the grid, allowing for more efficient
+collision detection by limiting collision checks to only particles in
 surrounding cells.
 
 <aside className="my-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
@@ -592,10 +582,6 @@ randomly generated particles to be simulated at once.
 <div className="h-5" />
 
 I'm incredibly happy with what came out of this project. The source code is on
-available on
-
-<a href="https://github.com/artiehumphreys/particle-simulator" target="_blank">
-  GitHub
-</a>
-. But, what's next? The goal is to extend this to fluid dynamics in the near
+available on [GitHub](https://github.com/artiehumphreys/particle-simulator).
+But, what's next? The goal is to extend this to fluid dynamics in the near
 future. Stay tuned for that.

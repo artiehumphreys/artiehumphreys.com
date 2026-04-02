@@ -7,13 +7,13 @@ export const tocData: TocSection[] = [
     anchor: "/optimization.html",
     children: [
       {
+        title: "Lock-Free Design: Building a High-Performance SPSC Queue",
+        anchor: "/optimization/spsc-queue.html",
+      },
+      {
         title:
           "Particle Simulation: Improving Performance by 20x With Parallelization",
         anchor: "/optimization/particle-simulation.html",
-      },
-      {
-        title: "Lock-Free Design: Building a High-Performance SPSC Queue",
-        anchor: "/optimization/spsc-queue.html",
       },
     ],
   },
