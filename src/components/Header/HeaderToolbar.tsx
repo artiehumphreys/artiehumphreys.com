@@ -58,13 +58,15 @@ export default function HeaderToolbar({
           <FolderGit2 size={iconSize} />
         </a>
 
-        <Link
+        <a
           href={resumeHref}
+          target="_blank"
+          rel="noopener noreferrer"
           aria-label="Resume"
           className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
         >
           <FileText size={iconSize} />
-        </Link>
+        </a>
 
         <a
           href={emailHref}
