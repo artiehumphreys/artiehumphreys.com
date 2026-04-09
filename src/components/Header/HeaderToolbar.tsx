@@ -21,19 +21,15 @@ export default function HeaderToolbar({
   const iconSize = 24;
   return (
     <>
-      <div
-        className={[
-          "fixed left-4 top-4 z-50",
-          showLeftOnMobile ? "flex" : "hidden lg:flex",
-          "items-center space-x-4",
-        ].join(" ")}
-      >
+      <div className="fixed left-4 top-4 z-50 flex items-center space-x-4">
         <button
           type="button"
           onClick={toggle}
           aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
           aria-pressed={!!open}
-          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
+          className={`${
+            showLeftOnMobile ? "inline-flex" : "hidden lg:inline-flex"
+          } items-center justify-center text-gray-700 hover:text-gray-900`}
         >
           <Menu size={iconSize} />
         </button>
