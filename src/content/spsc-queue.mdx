@@ -248,15 +248,15 @@ The question remains: can we do better?
 
 ## False Sharing
 
-To see how, we must understand how our queue struct is laid out in memory. The
-member variables are placed contiguously, in the order they were declared. If
-the two atomic indices end up on the same cache line, which, at only 8 bytes
-each, is highly likely, then every time a thread writes to its index, the cache
-coherency protocol invalidates that entire cache line for the other core. The
-other thread's next read, even of a completely different variable on that cache
-line, must then reload the line from a shared level of cache or from the other
-core directly. This is the false sharing problem, and can be a significant
-bottleneck in high-throughput scenarios.
+Again, the answer is yes. To see how, we must understand how our queue struct is
+laid out in memory. The member variables are placed contiguously, in the order
+they were declared. If the two atomic indices end up on the same cache line,
+which, at only 8 bytes each, is highly likely, then every time a thread writes
+to its index, the cache coherency protocol invalidates that entire cache line
+for the other core. The other thread's next read, even of a completely different
+variable on that cache line, must then reload the line from a shared level of
+cache or from the other core directly. This is the false sharing problem, and
+can be a significant bottleneck in high-throughput scenarios.
 
 <div className="h-5" />
 
