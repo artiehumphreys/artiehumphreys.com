@@ -1,3 +1,5 @@
+import ArticleToc from "../components/TableOfContents/ArticleToc";
+
 After completing this semester of studies at my university, I found myself
 continuing to ponder the material discussed in my Number Theory course,
 particularly regarding the unit of cryptography, which dove into various
@@ -14,7 +16,15 @@ This post may be a bit more math-heavy than my usual fare, but my goal is to
 make the ideas concrete and intuitive, especially where performance and design
 tradeoffs matter.
 
-<div className="h-5" />
+<ArticleToc
+  sections={[
+    { title: "RSA Overview", anchor: "#rsa-overview" },
+    { title: "The Rabin-p Cryptosystem", anchor: "#the-rabin-p-cryptosystem" },
+    { title: "Complexity Comparison", anchor: "#complexity-comparison" },
+  ]}
+/>
+
+## RSA Overview
 
 We begin with a brief overview of the RSA cryptosystem. Suppose you want to send
 me a message, encoded as an integer, over a public channel, securely. How can we
@@ -123,6 +133,8 @@ combine to create four distinct square roots modulo $n$
 ([Chinese Remainder Theorem](https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_(Barrus_and_Clark)/01%3A_Chapters/1.23%3A_Chinese_Remainder_Theorem)).
 
 <div className="h-5" />
+
+## The Rabin-p Cryptosystem
 
 This limitation is one of the primary reasons Rabin-style systems are rarely
 used. However, while exploring this design space, I came across a refinement
@@ -245,6 +257,8 @@ paper cited above.
 
 <div className="h-5" />
 
+## Complexity Comparison
+
 In terms of complexity, however, how does Rabin-p compare to RSA? At a high
 level, both schemes spend most of their time doing arithmetic on large integers.
 But how many multiplications and modular reductions do we need to perform
@@ -254,16 +268,34 @@ multiplications for RSA but only a single modular squaring in Rabin-p.
 
 <div className="h-5" />
 
-For decryption, we see that RSA performs a single modular exponentiation, with
-the exponent $d$ comparable in bit length to $n$. On the other hand, Rabin-p
-performs a single exponentiation modulo $p$, followed by a constant number of
-operations to perform the lift and extract the correct plaintext. Instead of
-doing work modulo $n$, Rabin-p does work modulo $p$.
+For decryption, the naive view is that RSA performs a single modular
+exponentiation $M^d \pmod{n}$, with the exponent $d$ comparable in bit length
+to $n$. On the other hand, Rabin-p performs a single exponentiation modulo $p$,
+followed by a constant number of operations to perform the lift and extract the
+correct plaintext. Instead of doing work modulo $n$, Rabin-p does work modulo
+$p$.
 
 <div className="h-5" />
 
-Practically speaking, RSA remains the standard, but Rabin-p provides a
-different, specialized approach to cryptosystems with more structural
-requirements and more logic needed for decryption. It's important to compare and
-contrast these different cryptosystems, as each makes a distinct tradeoff
-between efficiency, generality, and implementation complexity.
+However, this comparison is somewhat misleading. In practice, RSA decryption
+does not need to compute $M^d \pmod{n}$ directly. Instead, using the Chinese
+Remainder Theorem, one computes $d_1 = e^{-1} \pmod{p-1}$ and
+$d_2 = e^{-1} \pmod{q-1}$, then evaluates $M^{d_1} \pmod{p}$ and
+$M^{d_2} \pmod{q}$ separately, and combines the results via CRT to recover
+$M^d \pmod{n}$. Since each exponentiation now operates on numbers with roughly
+half the bit length of $n$, each one is significantly cheaper. The tradeoff is
+that two exponentiations are required instead of one, but the reduction in
+operand size more than compensates in practice.
+
+<div className="h-5" />
+
+With this optimization in mind, the gap between RSA and Rabin-p narrows
+considerably. Both schemes ultimately perform their heavy arithmetic modulo
+factors of $n$ rather than modulo $n$ itself. Rabin-p still avoids full modular
+exponentiation in favor of a single exponentiation modulo $p$ plus a
+constant-cost Hensel lift, but RSA with CRT-based decryption is far more
+competitive than the naive comparison suggests. Each system makes a distinct
+tradeoff between efficiency, generality, and implementation complexity, and
+understanding these nuances is what makes the comparison worthwhile.
+
+<div className="mt-8 text-sm text-gray-500 italic">Edited April 9, 2026</div>
