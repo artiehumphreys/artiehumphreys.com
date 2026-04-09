@@ -1,3 +1,5 @@
+import ArticleToc from "../components/TableOfContents/ArticleToc";
+
 Consider the following problem:
 
 <aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
@@ -21,7 +23,15 @@ Consider the following problem:
   </div>
 </aside>
 
-<div className="mt-6" />
+<ArticleToc
+  sections={[
+    { title: "Framing the Problem", anchor: "#framing-the-problem" },
+    { title: "The Two-Heap Solution", anchor: "#the-two-heap-solution" },
+    { title: "Supporting Deletions", anchor: "#supporting-deletions" },
+  ]}
+/>
+
+## Framing the Problem
 
 Before diving into the problem, I think that it is worth pausing to consider a
 few possible constraints or follow-ups to the problem. For example: what if we
@@ -93,6 +103,8 @@ far easier task.
 
 <div className="h-5" />
 
+## The Two-Heap Solution
+
 To achieve this, we can use two heaps: a max-heap for the lower half and a
 min-heap for the upper half. The max-heap gives us instant access to the largest
 element of the lower half, and the min-heap gives us instant access to the
@@ -114,6 +126,8 @@ insertion, we check the sizes of the heaps and rebalance them if necessary by
 moving the top element from one heap to the other.
 
 <div className="h-5" />
+
+## Supporting Deletions
 
 I will avoid going into the full implementation details here, it is left as an
 exercise to the reader. What I do want to do, however, is return to the
@@ -143,12 +157,4 @@ can make an otherwise intractable problem efficient.
 <div className="h-5" />
 
 Here's a link to the problem on LeetCode if you want to try it out yourself:
-
-<a
-  href="https://leetcode.com/problems/find-median-from-data-stream/"
-  target="_blank"
->
-  {" "}
-  LeetCode: Find Median From Data Stream
-</a>
-.
+[LeetCode: Find Median From Data Stream](https://leetcode.com/problems/find-median-from-data-stream/).

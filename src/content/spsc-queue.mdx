@@ -1,10 +1,12 @@
+import ArticleToc from "../components/TableOfContents/ArticleToc";
+
 Recently, I began working on a primitive graphics library written in C++ (source
 code [here](https://github.com/artiehumphreys/graphics-library)) that can draw,
 erase, and move shapes on the screen. It's a simple project, but I really
 enjoyed designing both the frontend API and the backend systems. One of my
 earliest design decisions, how the input handler interacted with the render
 engine, was one that piqued my interest and led me down a rabbit hole of
-concurrent system design. But first, let's look at the problem.
+concurrent system design. But first, let's look at the problem at hand.
 
 <aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
   <div className="mx-2">
@@ -15,6 +17,23 @@ concurrent system design. But first, let's look at the problem.
     system can we use to achieve fast, reliable communication?
   </div>
 </aside>
+
+<ArticleToc
+  sections={[
+    { title: "The Queue", anchor: "#the-queue" },
+    { title: "Why Lock-Free?", anchor: "#why-lock-free" },
+    { title: "Sequential Consistency", anchor: "#sequential-consistency" },
+    {
+      title: "Acquire-Release Semantics",
+      anchor: "#acquire-release-semantics",
+    },
+    { title: "False Sharing", anchor: "#false-sharing" },
+    { title: "Cached Index Strategy", anchor: "#cached-index-strategy" },
+    { title: "Batched Push", anchor: "#batched-push" },
+  ]}
+/>
+
+## The Queue
 
 A queue is the natural answer here: the input handler pushes events, and the
 render engine drains them. Previously, I built a MPMC (multi-producer,
@@ -42,7 +61,7 @@ memory. The read and write indices are managed using atomic variables to avoid
 the numerous possible race conditions that can occur otherwise with partially
 observed index updates.
 
-<div className="h-5" />
+## Why Lock-Free?
 
 Why even consider a lock-free approach? Mutexes are a tried and true way to
 combat data races in shared resources. However, even in the absence of heavy
@@ -53,7 +72,7 @@ push and pop, regardless of whether another thread is actually waiting. With
 only one producer and one consumer, we can mitigate this per-operation cost
 entirely by coordinating directly through atomics.
 
-<div className="h-5" />
+## Sequential Consistency
 
 We will begin by enforcing sequentially-consistent memory ordering, where all
 threads agree on a single global order of atomic operations. This is the
@@ -138,7 +157,7 @@ $$
 Although this test may not be perfect, it demonstrates the queue's performance
 in a sustained load situation. A natural follow-up is: Can we do any better?
 
-<div className="h-5" />
+## Acquire-Release Semantics
 
 The answer is yes. Sequential consistency forces all threads to agree on a
 single global order of every atomic operation which is a much stronger guarantee
@@ -227,14 +246,14 @@ $$
 
 The question remains: can we do better?
 
-<div className="h-5" />
+## False Sharing
 
-In fact, we can. To see how, we must understand our queue struct is laid out in
-memory. The member variables are placed contiguously, in the order they were
-declared. If the two atomic indices end up on the same cache line, which, at
-only 8 bytes each, is highly likely, then every time a thread writes to its
-index, the cache coherency protocol invalidates that entire cache line for the
-other core. The other thread's next read, even of a completely different
+Again, the answer is yes. To see how, we must understand how our queue struct is
+laid out in memory. The member variables are placed contiguously, in the order
+they were declared. If the two atomic indices end up on the same cache line,
+which, at only 8 bytes each, is highly likely, then every time a thread writes
+to its index, the cache coherency protocol invalidates that entire cache line
+for the other core. The other thread's next read, even of a completely different
 variable on that cache line, must then reload the line from a shared level of
 cache or from the other core directly. This is the false sharing problem, and
 can be a significant bottleneck in high-throughput scenarios.
@@ -306,6 +325,8 @@ for cache line contention to become the bottleneck.
   </div>
 </aside>
 
+## Cached Index Strategy
+
 The next optimization takes advantage of a subtle property of the read and write
 indices: they only ever increment. When either thread needs to check the other
 thread's index, it currently performs a costly acquire-load every time. But we
@@ -340,6 +361,8 @@ $$
 $$
 \textit{Table 4: Cached Index Strategy}
 $$
+
+## Batched Push
 
 The last optimization came about while developing the graphics library that this
 queue is a part of. I wanted to support selecting multiple items and moving them

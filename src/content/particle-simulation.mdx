@@ -1,4 +1,6 @@
-<figure className="mb-12">
+import ArticleToc from "../components/TableOfContents/ArticleToc";
+
+<figure className="mb-8">
   <div className="flex justify-center">
     <video
       playsInline
@@ -25,7 +27,25 @@ a particle simulator, giving me the avenue to dive deeper with C++ optimization
 and object-oriented design in hopes of creating something that interests me as a
 software developer.
 
-<div className="h-5" />
+<ArticleToc
+  sections={[
+    { title: "Verlet Integration", anchor: "#verlet-integration" },
+    { title: "Spatial Hash Grid", anchor: "#spatial-hash-grid" },
+    { title: "Collision Detection", anchor: "#collision-detection" },
+    {
+      title: "Improved Collision Checking",
+      anchor: "#improved-collision-checking",
+    },
+    { title: "Sparse-Row Pruning", anchor: "#sparse-row-pruning" },
+    {
+      title: "Parallelizing Collision Detection",
+      anchor: "#parallelizing-collision-detection",
+    },
+    { title: "Flattening the Grid", anchor: "#flattening-the-grid" },
+  ]}
+/>
+
+## Verlet Integration
 
 First, I think that it is important to discuss the physics behind the
 simulation. The particles in the simulation are influenced by gravity and also
@@ -110,24 +130,25 @@ greatly. Here's an outline of how I calculated this for each particle in C++:
 <div className="h-5" />
 
 ```cpp
-struct Vec2 { float x, y; };
+struct Vec2 {
+  float x, y;
+};
 
 struct Particle {
-    vec2 position;
-    vec2 lastPosition;
-    vec2 acceleration;
+  vec2 position;
+  vec2 lastPosition;
+  vec2 acceleration;
 
-    void update(float timeDiff) {
-        vec2 newPosition =
-            2.0f * position - lastPosition + acceleration * (timeDiff * timeDiff);
-        position = newPosition;
-        lastPosition = position;
-    }
+  void update(float timeDiff) {
+    vec2 newPosition =
+      2.0f * position - lastPosition + acceleration * (timeDiff * timeDiff);
+    position = newPosition;
+    lastPosition = position;
+  }
 };
 ```
 
-<div className="h-5" />
-<div className="h-5" />
+## Spatial Hash Grid
 
 Next, let's discuss some of the design choices I made while implementing the
 simulator. Thinking broadly, noticing collisions between particles is something
@@ -158,22 +179,24 @@ surrounding cells.
 
 ```cpp
 struct Grid {
-    std::vector<Cell> cells;
-    struct Cell {
-        std::vector<uint32_t> particleIndices;
+  std::vector<Cell> cells;
+  struct Cell {
+    std::vector<uint32_t> particleIndices;
 
-        void addParticle(uint32_t idx) { particleIndices.push_back(idx); }
+    void addParticle(uint32_t idx) { particleIndices.push_back(idx); }
 
-        bool removeParticle(uint32_t idx) {
-            for (auto it = particleIndices.begin(); it != particleIndices.end(); ++it) {
-                if (*it != idx) continue;
-                std::iter_swap(it, particleIndices.end() - 1);
-                particleIndices.pop_back();
-                return true;
-            }
-            return false;
-        }
-    };
+    bool removeParticle(uint32_t idx) {
+      for (auto it = particleIndices.begin(); it != particleIndices.end();
+           ++it) {
+        if (*it != idx)
+          continue;
+        std::iter_swap(it, particleIndices.end() - 1);
+        particleIndices.pop_back();
+        return true;
+      }
+      return false;
+    }
+  };
 };
 ```
 
@@ -198,15 +221,11 @@ the size of each cell as needed for maximum performance.
 
 <div className="h-5" />
 
+## Collision Detection
+
 On the collision side of things, handling them efficiently is key. Since square
 root is a costly operation in terms of performance, with a latency of
-
-<a
-  href="https://developer.arm.com/documentation/100400/0002/floating-point-unit-programmers-model/instruction-throughput-and-latency?lang=en"
-  target="_blank"
->
-  up to 32 clock cycles
-</a>
+[up to 32 clock cycles](https://developer.arm.com/documentation/ddi0458/d/Floating-Point-Unit-Programmers-Model/Instruction-throughput-and-latency/Definitions-of-throughput-and-latency?lang=en)
 on most ARM architectures, using this operation sparingly will be required. To
 do so, we can avoid it altogether by using squared distances instead of actual
 distances when checking for collisions. Concretely, given particles $$p_1$$,
@@ -248,22 +267,22 @@ this can be implemented as follows:
 #include <cmath>
 
 void solveCollision(Particle &p1, Particle &p2) {
-    constexpr float epsilon = 1e-4;
-    const float expectedDistance = static_cast<float>(p1.radius + p2.radius);
-    vec2 axis = p1.position - p2.position;
-    const float squaredDistance = axis.x * axis.x + axis.y * axis.y;
+  constexpr float epsilon = 1e-4;
+  const float expectedDistance = static_cast<float>(p1.radius + p2.radius);
+  vec2 axis = p1.position - p2.position;
+  const float squaredDistance = axis.x * axis.x + axis.y * axis.y;
 
-    if (squaredDistance < expectedDistance * expectedDistance &&
-        squaredDistance > epsilon) {
-        const float actualDistance = std::sqrt(squaredDistance);
-        const float overlap = expectedDistance - actualDistance;
-        const float delta = 0.5f * overlap;
+  if (squaredDistance < expectedDistance * expectedDistance &&
+      squaredDistance > epsilon) {
+    const float actualDistance = std::sqrt(squaredDistance);
+    const float overlap = expectedDistance - actualDistance;
+    const float delta = 0.5f * overlap;
 
-        const vec2 colVec = (axis / actualDistance) * delta;
+    const vec2 colVec = (axis / actualDistance) * delta;
 
-        p1.position += colVec;
-        p2.position -= colVec;
-    }
+    p1.position += colVec;
+    p2.position -= colVec;
+  }
 }
 ```
 
@@ -283,17 +302,13 @@ improve performance and scalability.
 
 <div className="h-5" />
 
-<ol>
-  <li>
-    **Improved Collision Checking.**
-  </li>
-  <div className="h-5" />
-  The first big improvement that saw a ~2x increase in performance was optimizing the collision
-  detection algorithm by reducing unnecessary cell-neighbor checks. Instead of checking all 8
-  neighboring cells and the current cell for potential collisions, it turns out that we only
-  need to check 4 of the 8 surrounding cells. To illustrate this, consider the following diagram.
+## Improved Collision Checking
 
-{" "}
+The first big improvement that saw a ~2x increase in performance was optimizing
+the collision detection algorithm by reducing unnecessary cell-neighbor checks.
+Instead of checking all 8 neighboring cells and the current cell for potential
+collisions, it turns out that we only need to check 4 of the 8 surrounding
+cells. To illustrate this, consider the following diagram.
 
 <div className="flex justify-center mt-6">
   <img
@@ -312,8 +327,6 @@ many cells, this results in unnecessary computations. For an optimized approach,
 we can simply check only the cells below and to the right. Consider this diagram
 of our improved cross-cell checking:
 
-{" "}
-
 <div className="flex justify-center mt-6">
   <img
     src="/optimized_grid_search.png"
@@ -330,17 +343,7 @@ leading to a ~2x performance gain, all while maintaining accurate collision
 detection. This moved our total particle count from 750 to 1500 while still
 achieving 60 FPS.
 
-{" "}
-
-<div className="h-5" />
-
-{" "}
-
-<li>**Sparse-Row Pruning**</li>
-
-{" "}
-
-<div className="h-5" />
+## Sparse-Row Pruning
 
 On a similar note, one problem that I ran into was a performance bottleneck
 regarding grid cell checks, similar to the one described above. Scanning every
@@ -381,8 +384,6 @@ non-empty cell. Every frame, these values are updated incrementally as particles
 move. This is how I implemented this for when a particle is inserted into and
 removed from a cell:
 
-{" "}
-
 <div className="h-5" />
 
 ```yaml
@@ -417,8 +418,6 @@ remove:
       if c == rowMaxCol[r]: RecomputeRowMax(r, start=c-1)
 ```
 
-{" "}
-
 <div className="h-5" />
 
 Mathematically, this changes the number of cells that we consider each frame
@@ -438,17 +437,7 @@ where $$M \leq N$$ is the number of non-empty cells in the active rows. This
 optimization yielded another ~2x performance improvement, allowing us to reach a
 total of 3000 particles at 60 FPS.
 
-{" "}
-
-<div className="h-5" />
-
-{" "}
-
-<li>**Parallelizing Collision Detection**</li>
-
-{" "}
-
-<div className="h-5" />
+## Parallelizing Collision Detection
 
 In my opinion, this is the coolest optimization of them all. It took real design
 work, and I’m happy with where it landed. The core is a single shared MPMC
@@ -463,8 +452,6 @@ empty. The invariant here is that a frame is considered “done” exactly when 
 work queue is empty AND the in-flight counter is zero. That definition is cheap
 to test and doesn’t require per-task joins.
 
-{" "}
-
 <div className="h-5" />
 
 On top of that queue, a fixed-size thread pool runs a set of worker threads.
@@ -477,8 +464,6 @@ drains the queue via the non-blocking path—if a task is available, it runs it
 immediately; if not, and work is still in flight, it parks on the condition
 variable and wakes on progress. This shortens the tail of each batch and keeps
 frame pacing tight without introducing a second synchronization primitive.
-
-{" "}
 
 <div className="h-5" />
 
@@ -494,8 +479,6 @@ frame pacing tight without introducing a second synchronization primitive.
     reduces queue contention, improves cache locality, and limits scheduling overhead; combined
     with the half-stencil grid checks and two-stripe passes, no two tasks write the same
     particles in a pass, so the collision phase remains lock-free.
-
-{" "}
 
 <aside className="mt-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
   <div className="mx-2">
@@ -513,40 +496,37 @@ frame pacing tight without introducing a second synchronization primitive.
   </div>
 </aside>
 
-{" "}
-
 <div className="h-5" />
 
 ```cpp
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 void collideWavefront(uint32_t rowsPerTask = 4) {
-    const uint32_t R = collisionGrid.rows, C = collisionGrid.cols;
-    rowsPerTask = std::max<uint32_t>(1, rowsPerTask);
+  const uint32_t R = collisionGrid.rows, C = collisionGrid.cols;
+  rowsPerTask = std::max<uint32_t>(1, rowsPerTask);
 
-    auto submitStripe = [&](uint32_t startRow) {
-        std::vector<std::pair<uint32_t,uint32_t>> bands;
-        bands.reserve((R + rowsPerTask - 1) / rowsPerTask);
+  auto submitStripe = [&](uint32_t startRow) {
+    std::vector<std::pair<uint32_t, uint32_t>> bands;
+    bands.reserve((R + rowsPerTask - 1) / rowsPerTask);
 
-        for (uint32_t r0 = startRow; r0 < R; r0 += rowsPerTask) {
-            const uint32_t r1 = std::min<uint32_t>(R - 1, r0 + rowsPerTask - 1);
-            // optional: skip fully empty ranges if you maintain row headers per optimization 2
-            // if (!bandHasWork(r0, r1)) continue;
-            bands.emplace_back(r0, r1);
-        }
-        // one task per band
-        for (auto [r0, r1] : bands) {
-            pool.addTask([this, r0, r1, C] { processBand(r0, r1, C); });
-        }
-        pool.waitIdle(); // single barrier for this stripe
-    };
-    submitStripe(0); // rows [0, 2, ...]
-    submitStripe(1); // rows [1, 3, ...]
+    for (uint32_t r0 = startRow; r0 < R; r0 += rowsPerTask) {
+      const uint32_t r1 = std::min<uint32_t>(R - 1, r0 + rowsPerTask - 1);
+      // optional: skip fully empty ranges if you maintain row headers per
+      // optimization 2.
+      // if (!bandHasWork(r0, r1)) continue;
+      bands.emplace_back(r0, r1);
+    }
+    // one task per band
+    for (auto [r0, r1] : bands) {
+      pool.addTask([this, r0, r1, C] { processBand(r0, r1, C); });
+    }
+    pool.waitIdle(); // single barrier for this stripe
+  };
+  submitStripe(0); // rows [0, 2, ...]
+  submitStripe(1); // rows [1, 3, ...]
 }
 ```
-
-{" "}
 
 <div className="h-5" />
 
@@ -554,17 +534,7 @@ After implementing this, I saw a ~1.5x performance improvement on my 8-core
 machine, allowing for simulations with 4500 particles to be run at consistent 60
 FPS.
 
-{" "}
-
-<div className="h-5" />
-
-{" "}
-
-<li>**Flattening Spatial Hash Grid**</li>
-
-{" "}
-
-<div className="h-5" />
+## Flattening the Grid
 
 The biggest single speedup came from reshaping the grid from a nested
 `vector<vector<Cell>>` to a single, flat row-major array `vector<Cell>`. This
@@ -575,8 +545,6 @@ bounces around memory. This way, neighbors become fixed-offset indices in one
 contiguous buffer, leading to much better cache locality. This optimization led
 to the biggest improvement in performance, around 4x, allowing for up to 15000
 randomly generated particles to be simulated at once.
-
-</ol>
 
 <div className="h-5" />
 <div className="h-5" />
