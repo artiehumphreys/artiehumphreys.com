@@ -1,9 +1,9 @@
 import ArticleToc from "../components/TableOfContents/ArticleToc";
 
 You can view the original problem statements
-[here](https://codeforces.com/contest/1017).
-I encourage you to glance over the problems before reading my solutions. I was
-able to solve A, B, C, D, and G during the contest.
+[here](https://codeforces.com/contest/1017). I encourage you to glance over the
+problems before reading my solutions. I was able to solve A, B, C, D, and G
+during the contest.
 
 <ArticleToc
   sections={[
@@ -22,8 +22,6 @@ This problem is straightforward. We simply print the first character of the
 three input strings (via `string::front()`). Nothing crazy here since the
 strings are guaranteed to be non-empty.
 
-<div className="h-5" />
-
 ## [Problem 2094B](https://codeforces.com/contest/2094/problem/B)
 
 This problem is also somewhat straightforward. Reducing the problem statement,
@@ -40,8 +38,6 @@ This problem took me a while to understand, but the implementation follows
 easily once the insight is found. This will be the case for many competitive
 programming problems, so don't be discouraged if you don't immediately see the
 solution.
-
-<div className="h-5" />
 
 ## [Problem 2094C](https://codeforces.com/contest/2094/problem/C)
 
@@ -145,8 +141,6 @@ int main() {
 }
 ```
 
-<div className="h-5" />
-
 ## [Problem 2094D](https://codeforces.com/contest/2094/problem/D)
 
 For this problem, we are given a string $$p$$ and a string $$s$$, representing
@@ -180,8 +174,6 @@ continues until we reach the end of either string. This runs in linear time,
 $$O(n)$$, where $$n$$ is the maximum length of the two strings. The
 implementation follows directly from the above insights, so I won't include it
 here.
-
-<div className="h-5" />
 
 ## [Problem 2094E](https://codeforces.com/contest/2094/problem/E)
 
@@ -268,8 +260,6 @@ This approach is much more efficiency than the naive $$O(n^2)$$ solution of
 computing the xor sum for each $$a_k$$ directly. The time complexity of this
 solution is $$O(30 \cdot n) = O(n)$$, which is efficient for the input
 constraints. This problem is incredibly clever and I learned a lot from it.
-
-<div className="h-5" />
 
 ## [Problem 2094G](https://codeforces.com/contest/2094/problem/G)
 
