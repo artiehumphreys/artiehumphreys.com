@@ -29,6 +29,7 @@ export default function App({ Component, pageProps }: AppProps) {
             content="My personal explorations through the worlds of algorithmic optimization, creation, and beyond."
           />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" href="data:," />
         </Head>
         <Component {...pageProps} />
       </SidebarOffset>
