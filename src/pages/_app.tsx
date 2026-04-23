@@ -23,7 +23,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
       <SidebarOffset>
         <Head>
-          <title>Artie Humphreys&apos; Blog</title>
+          <title>Artie Humphreys</title>
           <meta
             name="description"
             content="My personal explorations through the worlds of algorithmic optimization, creation, and beyond."
