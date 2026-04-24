@@ -101,8 +101,6 @@ longer "how do we keep an entire dataset sorted?" but rather "how do we maintain
 two balanced halves and ensure the seam between them remains intact?" This is a
 far easier task.
 
-<div className="h-5" />
-
 ## The Two-Heap Solution
 
 To achieve this, we can use two heaps: a max-heap for the lower half and a
@@ -124,8 +122,6 @@ median will always be easy to retrieve: either it is the top of the larger heap,
 or, when the heaps are the same size, the average of their two tops. After every
 insertion, we check the sizes of the heaps and rebalance them if necessary by
 moving the top element from one heap to the other.
-
-<div className="h-5" />
 
 ## Supporting Deletions
 

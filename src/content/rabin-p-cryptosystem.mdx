@@ -130,9 +130,7 @@ to four possible plaintext results since, for $n = pq$, calculating
 $\sqrt{M} \pmod p$ and $\sqrt{M} \pmod q$ yields two solutions each, much like
 how a positive number has two square roots over the integers. These results then
 combine to create four distinct square roots modulo $n$
-([Chinese Remainder Theorem](https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_(Barrus_and_Clark)/01%3A_Chapters/1.23%3A_Chinese_Remainder_Theorem)).
-
-<div className="h-5" />
+([Chinese Remainder Theorem](<https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_(Barrus_and_Clark)/01%3A_Chapters/1.23%3A_Chinese_Remainder_Theorem>)).
 
 ## The Rabin-p Cryptosystem
 
@@ -142,8 +140,9 @@ known as the Rabin-p cryptosystem that resolves this ambiguity while preserving
 the efficiency benefits of squaring-based decryption. I will again step through
 the associated algorithms for encoding and decoding messages, following the
 Rabin-p cryptosystem as presented in
-[Asbullah and Ariffin (2016)](https://mjms.upm.edu.my/fullpaper/2016-August-10(S)/Muhammad%20Asyraf%20Asbullah-1-18.pdf).
+[Asbullah and Ariffin (2016)](<https://mjms.upm.edu.my/fullpaper/2016-August-10(S)/Muhammad%20Asyraf%20Asbullah-1-18.pdf>).
 Suppose you wish to send me a message over a public channel:
+
 <div className="h-5" />
 
 <ol>
@@ -255,8 +254,6 @@ Suppose you wish to send me a message over a public channel:
 A full proof of correctness of the decryption algorithm can be found in the
 paper cited above.
 
-<div className="h-5" />
-
 ## Complexity Comparison
 
 In terms of complexity, however, how does Rabin-p compare to RSA? At a high
@@ -269,8 +266,8 @@ multiplications for RSA but only a single modular squaring in Rabin-p.
 <div className="h-5" />
 
 For decryption, the naive view is that RSA performs a single modular
-exponentiation $M^d \pmod{n}$, with the exponent $d$ comparable in bit length
-to $n$. On the other hand, Rabin-p performs a single exponentiation modulo $p$,
+exponentiation $M^d \pmod{n}$, with the exponent $d$ comparable in bit length to
+$n$. On the other hand, Rabin-p performs a single exponentiation modulo $p$,
 followed by a constant number of operations to perform the lift and extract the
 correct plaintext. Instead of doing work modulo $n$, Rabin-p does work modulo
 $p$.
