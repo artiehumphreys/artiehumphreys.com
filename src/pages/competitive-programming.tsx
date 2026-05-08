@@ -5,8 +5,12 @@ const Body = dynamic(() => import("@/content/competitive-programming.mdx"));
 
 export default function Page() {
   return (
-    <BlogArticle title="Competitive Programming">
+    <BlogArticle
+      title="Competitive Programming"
+      description="Competitive programming contest notes."
+    >
       <Body />
     </BlogArticle>
   );
 }
+

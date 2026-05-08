@@ -7,6 +7,7 @@ export default function Page() {
   return (
     <BlogArticle
       title="Lock-Free Design: Building a High-Performance SPSC Queue"
+      description="Lock-free SPSC queue in C++."
       date="02/10/2026"
     >
       <Post />

@@ -5,7 +5,10 @@ const Body = dynamic(() => import("@/content/optimization.mdx"));
 
 export default function Page() {
   return (
-    <BlogArticle title="Optimization">
+    <BlogArticle
+      title="Optimization"
+      description="Notes on real-world performance and profiling."
+    >
       <Body />
     </BlogArticle>
   );

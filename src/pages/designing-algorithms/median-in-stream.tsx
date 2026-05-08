@@ -7,6 +7,7 @@ export default function Page() {
   return (
     <BlogArticle
       title="Find Median From Data Stream: Two Heap Approach"
+      description="Running median of a data stream with two heaps."
       date="10/02/2025"
     >
       <Post />

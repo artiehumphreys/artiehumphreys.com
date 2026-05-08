@@ -5,7 +5,10 @@ const Body = dynamic(() => import("@/content/designing-algorithms.mdx"));
 
 export default function Page() {
   return (
-    <BlogArticle title="Designing Algorithms">
+    <BlogArticle
+      title="Designing Algorithms"
+      description="Designing efficient algorithms for elegant solutions."
+    >
       <Body />
     </BlogArticle>
   );
