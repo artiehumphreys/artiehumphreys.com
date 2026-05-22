@@ -7,14 +7,11 @@ import "katex/dist/katex.min.css";
 import { SidebarProvider } from "@/components/Sidebar/SidebarProvider";
 import { tocData } from "@/data/tocData";
 import dynamic from "next/dynamic";
+import SidebarOffset from "@/components/Sidebar/SidebarOffset";
 
 const LeftRailToc = dynamic(() => import("@/components/LeftRailToc"), {
   ssr: false,
 });
-const SidebarOffset = dynamic(
-  () => import("@/components/Sidebar/SidebarOffset"),
-  { ssr: false },
-);
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
