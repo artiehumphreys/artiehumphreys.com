@@ -22,10 +22,38 @@ function escapeXml(s: string): string {
   );
 }
 
+const FONT = "Georgia, 'Latin Modern Roman', 'Times New Roman', serif";
+const FONT_SIZE = 64;
+const PADDING = 80;
+const MAX_WIDTH = WIDTH - PADDING * 2;
+const CHARS_PER_EM = 0.55;
+
+function wrapLines(label: string): string[] {
+  if (label.length * CHARS_PER_EM * FONT_SIZE <= MAX_WIDTH) return [label];
+
+  const slashIdx = label.indexOf("/");
+  if (slashIdx !== -1) {
+    return [label.slice(0, slashIdx + 1), label.slice(slashIdx + 1)];
+  }
+  return [label];
+}
+
 function svg(label: string): string {
+  const lines = wrapLines(label);
+  const lineHeight = FONT_SIZE * 1.4;
+  const blockHeight = lineHeight * (lines.length - 1);
+  const startY = HEIGHT / 2 - blockHeight / 2;
+
+  const tspans = lines
+    .map(
+      (line, i) =>
+        `<tspan x="${WIDTH / 2}" dy="${i === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`,
+    )
+    .join("");
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <text x="${WIDTH / 2}" y="${HEIGHT / 2}" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Latin Modern Roman', 'Times New Roman', serif" font-size="64" fill="#000000">${escapeXml(label)}</text>
+  <text x="${WIDTH / 2}" y="${startY}" text-anchor="middle" dominant-baseline="middle" font-family="${FONT}" font-size="${FONT_SIZE}" fill="#000000">${tspans}</text>
 </svg>`;
 }
 
