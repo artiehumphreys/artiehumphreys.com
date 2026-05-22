@@ -45,7 +45,9 @@ function isDir(p: string): boolean {
   }
 }
 
-async function main() {
+function main() {
+  render("artiehumphreys.com", join(OUT_DIR, "home.png"));
+
   for (const entry of readdirSync(PAGES_DIR)) {
     if (entry.startsWith("_") || entry.startsWith(".")) continue;
     const full = join(PAGES_DIR, entry);
@@ -62,7 +64,4 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main();
