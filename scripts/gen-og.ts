@@ -1,6 +1,6 @@
-import { readdirSync, statSync, mkdirSync } from "node:fs";
+import { readdirSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, dirname, basename, extname } from "node:path";
-import sharp from "sharp";
+import { Resvg } from "@resvg/resvg-js";
 
 const PAGES_DIR = join(process.cwd(), "src/pages");
 const OUT_DIR = join(process.cwd(), "public/og");
@@ -29,9 +29,11 @@ function svg(label: string): string {
 </svg>`;
 }
 
-async function render(label: string, outPath: string) {
+function render(label: string, outPath: string) {
   mkdirSync(dirname(outPath), { recursive: true });
-  await sharp(Buffer.from(svg(label))).png().toFile(outPath);
+  const resvg = new Resvg(svg(label), { fitTo: { mode: "width", value: WIDTH } });
+  const png = resvg.render().asPng();
+  writeFileSync(outPath, png);
   console.log("wrote", outPath, `(${label})`);
 }
 
@@ -50,12 +52,12 @@ async function main() {
     if (!isDir(full)) continue;
 
     const section = entry;
-    await render(section, join(OUT_DIR, `${section}.png`));
+    render(section, join(OUT_DIR, `${section}.png`));
 
     for (const f of readdirSync(full)) {
       if (extname(f) !== ".tsx") continue;
       const slug = basename(f, ".tsx");
-      await render(`${section}/${slug}`, join(OUT_DIR, section, `${slug}.png`));
+      render(`${section}/${slug}`, join(OUT_DIR, section, `${slug}.png`));
     }
   }
 }
