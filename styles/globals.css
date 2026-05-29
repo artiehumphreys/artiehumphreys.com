@@ -63,8 +63,8 @@
     white-space: pre;
   }
 
-  code[data-theme*=" "],
-  code[data-theme*=" "] span {
+  code[data-theme],
+  code[data-theme] span {
     color: var(--shiki-light);
     font-style: var(--shiki-light-font-style);
     font-weight: var(--shiki-light-font-weight);
@@ -89,8 +89,8 @@
     background-color: #161b22;
   }
 
-  code[data-theme*=" "],
-  code[data-theme*=" "] span {
+  code[data-theme],
+  code[data-theme] span {
     color: var(--shiki-dark);
     font-style: var(--shiki-dark-font-style);
     font-weight: var(--shiki-dark-font-weight);
