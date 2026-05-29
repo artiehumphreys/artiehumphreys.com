@@ -8,7 +8,7 @@ earliest design decisions, how the input handler interacted with the render
 engine, was one that piqued my interest and led me down a rabbit hole of
 concurrent system design. But first, let's look at the problem at hand.
 
-<aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+<aside className="m-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
   <div className="mx-2">
     <strong>Problem:</strong> We need to facilitate communication between the
     front-facing input handler and the render engine, which draws items on the
@@ -206,7 +206,7 @@ level: relaxed operations compile to plain register load and store instructions
 lighter-weight alternative to the `ldar` instruction that sequential consistency
 utilizes.
 
-<aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+<aside className="m-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
   <div className="mx-2">
     **Aside:** `LDAR` vs `LDAPR`
 
@@ -305,7 +305,7 @@ $$
 \textit{Table 3: Aligned Variables}
 $$
 
-<aside className="m-6 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4">
+<aside className="m-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
   <div className="mx-2">
     **Aside:** Premature Optimization
 
