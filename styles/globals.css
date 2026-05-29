@@ -63,3 +63,29 @@
     white-space: pre;
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #0d1117;
+    color: #c9d1d9;
+  }
+
+  article.prose a {
+    color: #58a6ff;
+    &:hover {
+      color: #79c0ff;
+    }
+  }
+
+  article.prose pre {
+    background-color: #161b22;
+  }
+
+  code[data-theme*=" "],
+  code[data-theme*=" "] span {
+    color: var(--shiki-dark);
+    font-style: var(--shiki-dark-font-style);
+    font-weight: var(--shiki-dark-font-weight);
+    text-decoration: var(--shiki-dark-text-decoration);
+  }
+}
