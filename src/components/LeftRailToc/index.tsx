@@ -19,7 +19,7 @@ export default function LeftRailToc({
         ].join(" ")}
       >
         <div
-          className={open ? "h-full px-2 py-4 bg-gray-50" : "h-full px-1 py-4"}
+          className={open ? "h-full px-2 py-4 bg-gray-50 dark:bg-gray-900" : "h-full px-1 py-4"}
         >
           {open ? (
             <div className="h-full overflow-y-auto pr-1 px-2.5 py-4">

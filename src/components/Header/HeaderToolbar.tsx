@@ -29,7 +29,7 @@ export default function HeaderToolbar({
           aria-pressed={!!open}
           className={`${
             showLeftOnMobile ? "inline-flex" : "hidden lg:inline-flex"
-          } items-center justify-center text-gray-700 hover:text-gray-900`}
+          } items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100`}
         >
           <Menu size={iconSize} />
         </button>
@@ -37,7 +37,7 @@ export default function HeaderToolbar({
         <Link
           href="/"
           aria-label="Home"
-          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
+          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
         >
           <Home size={iconSize} />
         </Link>
@@ -49,7 +49,7 @@ export default function HeaderToolbar({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="GitHub"
-          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
+          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
         >
           <FolderGit2 size={iconSize} />
         </a>
@@ -59,7 +59,7 @@ export default function HeaderToolbar({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Resume"
-          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
+          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
         >
           <FileText size={iconSize} />
         </a>
@@ -67,7 +67,7 @@ export default function HeaderToolbar({
         <a
           href={emailHref}
           aria-label="Email"
-          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900"
+          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
         >
           <Mail size={iconSize} />
         </a>

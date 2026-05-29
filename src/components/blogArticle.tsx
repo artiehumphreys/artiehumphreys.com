@@ -58,7 +58,7 @@ export default function BlogArticle({
       <div className="container mx-auto my-10 px-4 md:px-10 w-full md:w-7/10 font-latex">
         <Title title={title} date={formatDate(date)} />
         <article
-          className={`prose mx-auto text-lg [&>h2]:scroll-mt-28 [&>h3]:scroll-mt-28 ${
+          className={`prose dark:prose-invert mx-auto text-lg [&>h2]:scroll-mt-28 [&>h3]:scroll-mt-28 ${
             className ?? ""
           }`}
         >

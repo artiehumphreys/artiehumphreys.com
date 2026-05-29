@@ -18,7 +18,7 @@ export default function Home({ children }: HomeProps) {
     <div className="container mx-auto my-10 px-4 md:px-10 w-full md:w-7/10 font-latex">
       <Title title="Artie Humphreys" date={formattedDate} />
 
-      <article className="prose mx-auto text-lg [&>h2]:scroll-mt-28 [&>h3]:scroll-mt-28">
+      <article className="prose dark:prose-invert mx-auto text-lg [&>h2]:scroll-mt-28 [&>h3]:scroll-mt-28">
         {children}
       </article>
 
