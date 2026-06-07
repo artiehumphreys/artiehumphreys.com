@@ -198,8 +198,8 @@ synchronize with, so we can further relax the memory constraints with which we
 load the variable. In C++, relaxed memory ordering reports the variable as-is,
 meaning we may obtain a stale value if the other thread increments it. However,
 this does not break our implementation: since the indices only increment, a
-stale read acts as a lower bound of the given index. The queue may apppear full
-or empty when it isn't, but we can never pop from a truly empty queu or push to
+stale read acts as a lower bound of the given index. The queue may appear full
+or empty when it isn't, but we can never pop from a truly empty queue or push to
 a truly full one. On my ARM machine, this distinction matters at the instruction
 level: relaxed operations compile to plain register load and store instructions
 (`ldr` and `str`), and, as of ARMv8.3, acquire-loads use `ldapr`: a
