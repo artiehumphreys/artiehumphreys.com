@@ -1,20 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Home, FolderGit2, Mail, FileText } from "lucide-react";
+import { Menu, Home } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarProvider";
 
 type HeaderToolbarProps = {
-  githubHref?: string;
-  resumeHref?: string;
-  emailHref?: string;
   showLeftOnMobile?: boolean;
 };
 
 export default function HeaderToolbar({
-  githubHref = "https://github.com/artiehumphreys/artiehumphreys.com",
-  resumeHref = "https://artiehumphreys.com/resume.pdf",
-  emailHref = "mailto:ah.artiehumphreys@gmail.com",
   showLeftOnMobile = false,
 }: HeaderToolbarProps) {
   const { open, toggle } = useSidebar();
@@ -41,36 +35,6 @@ export default function HeaderToolbar({
         >
           <Home size={iconSize} />
         </Link>
-      </div>
-
-      <div className="fixed top-4 right-4 z-50 flex items-center space-x-4">
-        <a
-          href={githubHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="GitHub"
-          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-        >
-          <FolderGit2 size={iconSize} />
-        </a>
-
-        <a
-          href={resumeHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Resume"
-          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-        >
-          <FileText size={iconSize} />
-        </a>
-
-        <a
-          href={emailHref}
-          aria-label="Email"
-          className="inline-flex items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-        >
-          <Mail size={iconSize} />
-        </a>
       </div>
     </>
   );
