@@ -14,7 +14,8 @@ export default function Title({
       <HeaderToolbar />
       <h1 className="text-4xl font-latex !font-normal">{title}</h1>
       {author && <p className="mt-5 text-lg">{author}</p>}
-      <p className="mt-3 flex flex-wrap items-center justify-center gap-x-10 gap-y-1 text-sm [&_a]:underline [&_a]:underline-offset-2">
+      {date && <p className="mt-3 text-lg">{date}</p>}
+      <p className="mt-3 mb-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-1 text-sm [&_a]:text-blue-600 [&_a]:hover:text-blue-800 dark:[&_a]:text-[#58a6ff] dark:[&_a]:hover:text-[#79c0ff]">
         <a
           href="https://artiehumphreys.com/resume"
           target="_blank"
@@ -38,7 +39,6 @@ export default function Title({
           GitHub
         </a>
       </p>
-      {date && <p className="mt-3 text-lg">{date}</p>}
     </header>
   );
 }
