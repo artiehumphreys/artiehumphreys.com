@@ -1,0 +1,21 @@
+import ArticleToc from "../components/TableOfContents/ArticleToc";
+
+The [1 Billion Row Challenge](https://1brc.dev/#%F0%9F%92%AA-the-challenge) is a
+test of pure processing throughput, measuring how fast you can read 1 billion
+rows from a text file, computing the min, max, and mean for each of up to 10,00
+weather stations. The problem is very open-ended and leaves plenty of room for
+optimization along the way. I first caught wind of this challenge about 2 years
+ago, but I wanted to wait until I was better equipped to take it on. Submissions
+have since closed, so I tested this against my own hardware: an Intel Core
+i5-10400 processor (6 cores, 12 threads, 2.9 GHz), 16 GB of dual-channel DDR4
+DRAM, rated for 3200 MHz, but limited to 2666 MHz since that's the speed
+officially supported by the processor. The official entries were evaluated on a
+Hetzner AX161, a 32-core machine we 128 GB of RAM. This machine holds the entire
+input (~14.5 GB) in page cache several times over, whereas mine has less
+_regularly available_ RAM than the file has bytes. Since I'm bottlenecked by I/O
+on this setup, I did most of my testing/profiling on a smaller file around half
+the size. Below is the problem statement in case you aren't familiar.
+
+<ArticleToc
+  sections={[{ title: "Naive Approach", anchor: "#naive-approach" }]}
+/>

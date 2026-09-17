@@ -7,13 +7,16 @@ export const tocData: TocSection[] = [
     anchor: "/optimization.html",
     children: [
       {
-        title: "Lock-Free Design: Building a High-Performance SPSC Queue",
+        title: "Lock-Free SPSC Queue",
         anchor: "/optimization/spsc-queue.html",
       },
       {
-        title:
-          "Particle Simulation: Improving Performance by 20x With Parallelization",
+        title: "Particle Simulation",
         anchor: "/optimization/particle-simulation.html",
+      },
+      {
+        title: "1 Billion Row Challenge",
+        anchor: "/optimization/1brc.html",
       },
     ],
   },
@@ -22,12 +25,11 @@ export const tocData: TocSection[] = [
     anchor: "/designing-algorithms.html",
     children: [
       {
-        title:
-          "Designing an Efficient Public-Key Cryptosystem: Rabin-p vs. RSA",
+        title: "Rabin-p vs. RSA Public-Key Cryptosystems",
         anchor: "/designing-algorithms/rabin-p-cryptosystem.html",
       },
       {
-        title: "Find Median From Data Stream: Two Heap Approach",
+        title: "Find Median from Data Stream",
         anchor: "/designing-algorithms/median-in-stream.html",
       },
     ],
