@@ -16,6 +16,24 @@ _regularly available_ RAM than the file has bytes. Since I'm bottlenecked by I/O
 on this setup, I did most of my testing/profiling on a smaller file around half
 the size. Below is the problem statement in case you aren't familiar.
 
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
+  <div className="mx-2">
+    <strong>Problem Statement:</strong> You are given a text file with temperature measurements from `n` different stations. You need to calculate the min, max, and mean temperature at each weather station. The program should print out its results alphabetically ordered by station.
+
+    <div className="mt-2"/>
+
+    - insert(int num) adds the integer num from the data stream to the data structure.
+    - median() returns the median of all elements so far.
+
+    <div className="mt-2"/>
+
+    Ensure that the operations are efficient for $$1 \le n \le 10^5$$ insertions and
+    $$1 \le m \le 5 \cdot 10^4$$ queries. Assume that the sum of any two numbers can
+    comfortably fit into a 32-bit signed integer.
+
+  </div>
+</aside>
+
 <ArticleToc
   sections={[{ title: "Naive Approach", anchor: "#naive-approach" }]}
 />
