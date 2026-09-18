@@ -18,18 +18,22 @@ the size. Below is the problem statement in case you aren't familiar.
 
 <aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
   <div className="mx-2">
-    <strong>Problem Statement:</strong> You are given a text file with temperature measurements from `n` different stations. You need to calculate the min, max, and mean temperature at each weather station. The program should print out its results alphabetically ordered by station.
+    <strong>Problem Statement:</strong> You are given a text file with $$n$$
+    temperature measurements from $$m$$ different weather stations. You need
+    to calculate the min, max, and mean temperature at each weather station.
+    The program should print out its results alphabetically ordered by station.
+    The problem has the following constraints, that I fudged a little for a
+    cleaner implementation:
 
     <div className="mt-2"/>
 
-    - insert(int num) adds the integer num from the data stream to the data structure.
-    - median() returns the median of all elements so far.
-
-    <div className="mt-2"/>
-
-    Ensure that the operations are efficient for $$1 \le n \le 10^5$$ insertions and
-    $$1 \le m \le 5 \cdot 10^4$$ queries. Assume that the sum of any two numbers can
-    comfortably fit into a 32-bit signed integer.
+    - $$n = 1,000,000,000$$
+    - $$ 5,000 \le m \le 10,000$$
+    - the name of each station will fit within 16 bytes and only contain ASCII
+    characters
+    - each temperature measurement is a value within $$[-99.9, 99.9]$$ formatted
+    to the tenths place.
+    - the station name and temperature measurement will be separated by a ';'.
 
   </div>
 </aside>
@@ -37,3 +41,28 @@ the size. Below is the problem statement in case you aren't familiar.
 <ArticleToc
   sections={[{ title: "Naive Approach", anchor: "#naive-approach" }]}
 />
+
+## Naive Approach
+
+My initial "naive" approach was deliberately unsophisticated. It followed a
+blueprint that remained _mostly_ constant throughout my revisions— what changed
+over time was how each step was carried out, not the steps themselves.
+
+<div className="h-5" />
+
+This iteration was multithreaded, splitting the file into one roughly equal
+range of bytes per thread while ensuring that no row straddled a chunk. I never
+attempted to dynamically assign work to the threads, I believed that the
+coordination overhead would be too great and, in theory, each thread should
+finish around the same time. Below is how each thread operated. Consider how
+each of the bolded phrases might be changed / improved upon in future
+iterations:
+
+<div className="h-5" />
+
+1. The thread **processes one line at a time**, finding the delimiter in the
+   given line using
+   **[`std::ranges::find`](https://en.cppreference.com/cpp/algorithm/ranges/find)
+   with
+   [`std::unreachable_sentinel`](https://en.cppreference.com/cpp/iterator/unreachable_sentinel_t)**
+   as the semicolon is guaranteed to appear on each line.
