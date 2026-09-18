@@ -8,7 +8,7 @@ interface ArticleTocProps {
 const ArticleToc: React.FC<ArticleTocProps> = ({ sections }) => {
   return (
     <nav aria-label="Table of contents" className="font-latex prose dark:prose-invert my-4">
-      <h2 className="text-3xl font-bold mt-4 mb-4">
+      <h2 className="text-3xl mt-4 mb-4">
         Contents
       </h2>
       <ul className="list-disc pl-7 my-0">
