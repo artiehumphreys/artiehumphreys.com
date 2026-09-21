@@ -42,13 +42,16 @@ familiar.
 </aside>
 
 <ArticleToc
-  sections={[{ title: "Naive Approach", anchor: "#naive-approach" }]}
+  sections={[
+    { title: "Naive Approach", anchor: "#naive-approach" },
+    { title: "Preface", anchor: "#preface" },
+  ]}
 />
 
-## **Preface**: 1 Billion and the page cache
+## Preface
 
 One thing that I failed to consider before beginning this project is how big of
-a role the page cache would play. In retrospect, it makes complete sense —-those
+a role the page cache would play. In retrospect, it makes complete sense —those
 pages that are fetched from disk are stored in RAM to prevent future accesses
 from hitting disk. The biggest concept that I initially didn't understand was
 that the page cache scales dynamically and can grow to fill almost all of the
@@ -59,23 +62,23 @@ of that actually being available on an idle machine, against an input file of
 14.29 GiB (15.34 GB). There's no possible way for the entire file to be present
 in the page cache, even without other processes running. During my initial
 tests, as RAM filled up, any pages fetched from disk had to evict other clean
-pages, even those that were read ahead by the kernel and have yet to be
-accessed, requiring another major fault (trip to disk) when those pages are
-needed.
+pages, even those that were read ahead by the kernel and had yet to be accessed,
+requiring another major fault (trip to disk) when those pages are needed.
 
 <div className="h-5" />
 
-Due to this, I decided to use a file with 270 million rows instead (3.86 GiB,
-4.14 GB). Still a lot of data to parse, but small enough to stay resident in the
-page cache. This means that a warm run takes zero major faults and the challenge
+I did consider walking behind the scan with `madvise(MADV_DONTNEED)` to release
+what I had already read, but that only tears down my own page table entries and
+leaves the page cache pages resident.
+
+<div className="h-5" />
+
+Due to this, I decided to use a file with 270 million rows instead (3.86 GiB).
+Still a lot of data to parse, but small enough to stay resident in the page
+cache. This means that a warm run takes zero major faults and the challenge
 becomes a sheer measure of parse speed.
 
 <div className="h-5" />
-
-Even if it fit, a sequential scan is the worst case for the page cache: I touch
-each page once and never come back, so the front of the file is always the
-coldest thing in memory and the first to be reclaimed when the end needs a
-frame. The scan evicts its own history as it goes.
 
 ## Naive Approach
 
