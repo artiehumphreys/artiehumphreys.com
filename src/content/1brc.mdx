@@ -1,20 +1,23 @@
 import ArticleToc from "../components/TableOfContents/ArticleToc";
+import Revisit from "../components/Revisit";
 
 The [1 Billion Row Challenge](https://1brc.dev/#%F0%9F%92%AA-the-challenge) is a
 test of pure processing throughput, measuring how fast you can read 1 billion
-rows from a text file, computing the min, max, and mean for each of up to 10,00
-weather stations. The problem is very open-ended and leaves plenty of room for
-optimization along the way. I first caught wind of this challenge about 2 years
-ago, but I wanted to wait until I was better equipped to take it on. Submissions
-have since closed, so I tested this against my own hardware: an Intel Core
-i5-10400 processor (6 cores, 12 threads, 2.9 GHz), 16 GB of dual-channel DDR4
-DRAM, rated for 3200 MHz, but limited to 2666 MHz since that's the speed
-officially supported by the processor. The official entries were evaluated on a
-Hetzner AX161, a 32-core machine we 128 GB of RAM. This machine holds the entire
-input (~14.5 GB) in page cache several times over, whereas mine has less
-_regularly available_ RAM than the file has bytes. Since I'm bottlenecked by I/O
-on this setup, I did most of my testing/profiling on a smaller file around half
-the size. Below is the problem statement in case you aren't familiar.
+rows from a text file and compute the min, max, and mean for each of up to
+10,000 weather stations. The problem is very open-ended and leaves plenty of
+room for optimization along the way. I first caught wind of this challenge about
+2 years ago, but I wanted to wait until I was better equipped to take it on.
+Submissions have since closed, so I tested this against my own hardware: an
+Intel Core i5-10400 processor (6 cores, 12 threads, 2.9 GHz, 4.3GHz boost
+frequency), 16 GB of dual-channel DDR4 DRAM, rated for 3200 MHz, but limited to
+2666 MHz since that's the speed officially supported by the processor. The
+official entries were evaluated on a Hetzner AX161, a 32-core machine with 128
+GB of RAM. That machine holds the entire input (14.29 GiB, or 15.34 GB) in page
+cache several times over, whereas mine has less _regularly available_ RAM than
+the file has bytes. Since I'm bottlenecked by I/O on this setup, I did most of
+my testing and profiling against a smaller file of 270 million rows, roughly a
+quarter of the full input. Below is the problem statement in case you aren't
+familiar.
 
 <aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
   <div className="mx-2">
@@ -22,7 +25,7 @@ the size. Below is the problem statement in case you aren't familiar.
     temperature measurements from $$m$$ different weather stations. You need
     to calculate the min, max, and mean temperature at each weather station.
     The program should print out its results alphabetically ordered by station.
-    The problem has the following constraints, that I fudged a little for a
+    The problem has the following constraints, which I fudged a little for a
     cleaner implementation:
 
     <div className="mt-2"/>
@@ -42,27 +45,105 @@ the size. Below is the problem statement in case you aren't familiar.
   sections={[{ title: "Naive Approach", anchor: "#naive-approach" }]}
 />
 
+## **Preface**: 1 Billion and the page cache
+
+One thing that I failed to consider before beginning this project is how big of
+a role the page cache would play. In retrospect, it makes complete sense —-those
+pages that are fetched from disk are stored in RAM to prevent future accesses
+from hitting disk. The biggest concept that I initially didn't understand was
+that the page cache scales dynamically and can grow to fill almost all of the
+physical RAM that isn't used by other processes. However, one look at the
+available memory that I actually had using `free` revealed that I had much less
+memory to work with than I initially anticipated: 15 GiB total, with only 14 GiB
+of that actually being available on an idle machine, against an input file of
+14.29 GiB (15.34 GB). There's no possible way for the entire file to be present
+in the page cache, even without other processes running. During my initial
+tests, as RAM filled up, any pages fetched from disk had to evict other clean
+pages, even those that were read ahead by the kernel and have yet to be
+accessed, requiring another major fault (trip to disk) when those pages are
+needed.
+
+<div className="h-5" />
+
+Due to this, I decided to use a file with 270 million rows instead (3.86 GiB,
+4.14 GB). Still a lot of data to parse, but small enough to stay resident in the
+page cache. This means that a warm run takes zero major faults and the challenge
+becomes a sheer measure of parse speed.
+
+<div className="h-5" />
+
+Even if it fit, a sequential scan is the worst case for the page cache: I touch
+each page once and never come back, so the front of the file is always the
+coldest thing in memory and the first to be reclaimed when the end needs a
+frame. The scan evicts its own history as it goes.
+
 ## Naive Approach
 
 My initial "naive" approach was deliberately unsophisticated. It followed a
-blueprint that remained _mostly_ constant throughout my revisions— what changed
+blueprint that remained _mostly_ constant throughout my revisions — what changed
 over time was how each step was carried out, not the steps themselves.
 
 <div className="h-5" />
 
 This iteration was multithreaded, splitting the file into one roughly equal
-range of bytes per thread while ensuring that no row straddled a chunk. I never
-attempted to dynamically assign work to the threads, I believed that the
-coordination overhead would be too great and, in theory, each thread should
-finish around the same time. Below is how each thread operated. Consider how
-each of the bolded phrases might be changed / improved upon in future
+range of bytes per thread while ensuring that no row straddled a chunk. One
+approach that I considered but never attempted was handing out work dynamically
+to the threads. I believed that the coordination overhead would be too great
+and, in theory, each thread should finish around the same time. Below is a brief
+outline of how each thread operated in this inital implementation. Consider how
+each of the underlined phrases might be changed / improved upon in future
 iterations:
 
 <div className="h-5" />
 
-1. The thread **processes one line at a time**, finding the delimiter in the
-   given line using
-   **[`std::ranges::find`](https://en.cppreference.com/cpp/algorithm/ranges/find)
-   with
-   [`std::unreachable_sentinel`](https://en.cppreference.com/cpp/iterator/unreachable_sentinel_t)**
-   as the semicolon is guaranteed to appear on each line.
+1. The thread <Revisit>processes one line at a time</Revisit>, finding the
+   delimiter with <Revisit>
+   [`std::ranges::find`](https://en.cppreference.com/cpp/algorithm/ranges/find)
+   and
+   [`std::unreachable_sentinel`](https://en.cppreference.com/cpp/iterator/unreachable_sentinel_t)
+   </Revisit>, since the semicolon is guaranteed to appear on each line.
+2. Parse the station and the temperature, storing the temperature as a 16-bit
+   integer, that value being $$\text{temperature reading} \times 10$$. Add each
+   reading to <Revisit>a single, global `std::map`</Revisit> guarded by
+   <Revisit>a global mutex</Revisit>, since every thread writes into the same
+   table.
+3. Track the running <Revisit>min and max with `std::min` / `std::max`</Revisit>
+   alongside the sum and count for each station.
+4. Once every thread joins, walk the table in sorted order and write each
+   station's results to the output file.
+
+<div className="h-5" />
+
+On the smaller file, this took just under three minutes; pretty awful. The wall
+clock isn't the interesting number, though: the program boasted a measly 0.53
+instructions per cycle. `perf` revealed that my implementation spent more than
+6x as long inside the kernel (system time) as it did running its own code (user
+time). With the file already warm in page cache, almost none of that system time
+is I/O, it is the futex waiting. Every thread that loses the lock parks itself
+in a futex wait, and every handoff back costs a trip through the scheduler. 270
+million map updates behind one lock means 270 million opportunities for a thread
+to block, and the twelve threads I have available on my machine spent most of
+their time doing exactly that, as seen by the 174 million context switches, at
+an effective clock of 1.94 GHz. Nothing about the parse loop mattered yet.
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 179.63 \pm 1.18 \\
+\text{Context switches} & 173{,}898{,}628 \\
+\text{Page faults} & 63{,}509 \\
+\text{Instructions per cycle} & 0.53 \\
+\text{Effective clock (GHz)} & 1.94 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 1: Naive implementation, 270 million rows}
+$$
+
+## **Optimization 1**: Poor Man's Map
