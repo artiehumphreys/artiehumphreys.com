@@ -92,10 +92,10 @@ This iteration was multithreaded, splitting the file into one roughly equal
 range of bytes per thread while ensuring that no row straddled a chunk. One
 approach that I considered but never attempted was handing out work dynamically
 to the threads. I believed that the coordination overhead would be too great
-and, in theory, each thread should finish around the same time. Below is a brief
-outline of how each thread operated in this inital implementation. Consider how
-each of the underlined phrases might be changed / improved upon in future
-iterations:
+and, in theory, each thread should finish around the same time anyway. Below is
+a brief outline of how each thread operated in this inital implementation.
+Consider how each of the underlined phrases might be changed / improved upon in
+future iterations:
 
 <div className="h-5" />
 
@@ -150,3 +150,22 @@ $$
 $$
 
 ## **Optimization 1**: Poor Man's Map
+
+I think that the most glaring issue with the naive approach is the use of a
+single source of state, protected by a mutex that twelve threads fight over. A
+much better approach, albeit costlier in terms of space (more on this later), is
+to isolate min, max, and mean calculations to each thread and merging them
+together once the file has been read. Luckily, min and max are associative and
+the mean across all readings for a station can be inferred if we know the sum
+and the number of readings. So, it makes sense for each thread to store a map,
+keyed by station name, with a custom struct to keep track of the those totals
+for each thread.
+
+- SSO
+
+Inspired by [this talk](https://www.youtube.com/watch?v=h8TBLKyo7Rs), we can do
+some napkin math to approximate how much space we'll actually use with this
+approach:
+
+- Each node is 25 bytes, 24 bytes for left, right, and parent pointers, 1 byte
+  for a red/black tree bool
