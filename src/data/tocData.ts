@@ -7,12 +7,12 @@ export const tocData: TocSection[] = [
     anchor: "/optimization.html",
     children: [
       {
-        title: "Lock-Free SPSC Queue",
-        anchor: "/optimization/spsc-queue.html",
-      },
-      {
         title: "Particle Simulation",
         anchor: "/optimization/particle-simulation.html",
+      },
+      {
+        title: "Lock-Free SPSC Queue",
+        anchor: "/optimization/spsc-queue.html",
       },
       {
         title: "1 Billion Row Challenge",
