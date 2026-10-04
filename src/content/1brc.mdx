@@ -32,7 +32,7 @@ familiar.
 
     - $$n = 1,000,000,000$$
     - $$ 5,000 \le m \le 10,000$$
-    - the name of each station will fit within 16 bytes and only contain ASCII
+    - the name of each station will fit within 15 bytes and only contain ASCII
     characters
     - each temperature measurement is a value within $$[-99.9, 99.9]$$ formatted
     to the tenths place.
@@ -45,6 +45,10 @@ familiar.
   sections={[
     { title: "Preface", anchor: "#preface" },
     { title: "Naive Approach", anchor: "#naive-approach" },
+    {
+      title: "Optimization 1: Poor Man's Map",
+      anchor: "#optimization-1-poor-mans-map",
+    },
   ]}
 />
 
@@ -117,17 +121,18 @@ future iterations:
 
 <div className="h-5" />
 
-On the smaller file, this took just under three minutes; pretty awful. The wall
-clock isn't the interesting number, though: the program boasted a measly 0.53
-instructions per cycle. `perf` revealed that my implementation spent more than
-6x as long inside the kernel (system time) as it did running its own code (user
-time). With the file already warm in page cache, almost none of that system time
-is I/O, it is the futex waiting. Every thread that loses the lock parks itself
-in a futex wait, and every handoff back costs a trip through the scheduler. 270
-million map updates behind one lock means 270 million opportunities for a thread
-to block, and the twelve threads I have available on my machine spent most of
-their time doing exactly that, as seen by the 174 million context switches, at
-an effective clock of 1.94 GHz. Nothing about the parse loop mattered yet.
+On the smaller file, this took just under three minutes which isn't great. The
+wall clock isn't necessarily the most interesting metric, however: the program
+boasted a measly 0.53 instructions per cycle when we should be shooting for 2 or
+more at least. `perf` revealed that my implementation spent more than 6x as long
+inside the kernel (system time) as it did running its own code (user time). With
+the file already warm in page cache, almost none of that system time is I/O, it
+is the futex waiting. Every thread that loses the lock parks itself in a futex
+wait, and every handoff back costs a trip through the scheduler. 270 million map
+updates behind one lock means 270 million opportunities for a thread to block,
+and the twelve threads I have available on my machine spent most of their time
+doing exactly that, as seen by the 174 million context switches, at an effective
+clock of 1.94 GHz. Nothing about the parse loop mattered yet.
 
 <div className="h-5" />
 
@@ -153,19 +158,96 @@ $$
 
 I think that the most glaring issue with the naive approach is the use of a
 single source of state, protected by a mutex that twelve threads fight over. A
-much better approach, albeit costlier in terms of space (more on this later), is
-to isolate min, max, and mean calculations to each thread and merging them
-together once the file has been read. Luckily, min and max are associative and
-the mean across all readings for a station can be inferred if we know the sum
-and the number of readings. So, it makes sense for each thread to store a map,
-keyed by station name, with a custom struct to keep track of the those totals
-for each thread.
+much better approach comes from noticing that none of that state needs to be
+shared while the file is being read. The min and max computations are
+associative in nature, and the mean across all readings for a station can be
+extrapolated from the sum of its temperatures and the total number of readings,
+both of which are associative too. This means that every thread can keep its own
+table, keyed by station name, accumulating those four values as it processes its
+own chunk of the file. The twelve tables can be merged once the last thread has
+joined, removing the need for any synchronization between threads while the file
+is being read.
 
-- SSO
+<div className="h-5" />
+
+The tradeoff with this approach is that we are trading memory for speed, since
+the table now exists twelve times over. My first iteration reached for the
+obvious container for this, `std::map`:
+
+<div className="h-5" />
+
+```cpp
+struct Stats {
+  int16_t min, max;
+  uint32_t count;
+  int64_t sum;
+};
+
+std::map<std::string, Stats> table;
+```
+
+<div className="h-5" />
+
+`std::map` is the most natural choice for a container here, sorting the keys by
+default, which is required for the final output. Merging the tables at the end
+is cheap as well, since each thread's table holds at most 10,000 entries,
+folding all twelve into one costs at most 120,000 updates. The catch is that the
+270 million map operations completed while reading the file must maintain the
+sorted order of keys for an ordering that I need exactly once after I merge
+results, to print 10,000 lines.
+
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
+  **Aside: SSO**
+
+<div className="mt-2" />
+
+Limiting the station names to at most 15 bytes allows for the keys of the map to
+be stored directly inside the string object via short string optimization (SSO),
+bypassing a separate heap allocation for the characters themselves. The bytes of
+the string now live in the node we've already loaded, so a key comparison never
+has to chase a pointer and wait on another cache line.
+
+</aside>
+
+<div className="h-5" />
 
 Inspired by [this talk](https://www.youtube.com/watch?v=h8TBLKyo7Rs), we can do
 some napkin math to approximate how much space we'll actually use with this
 approach:
 
-- Each node is 25 bytes, 24 bytes for left, right, and parent pointers, 1 byte
-  for a red/black tree bool
+- Each node is 32 bytes, 24 bytes for left, right, and parent pointers, 4 bytes
+  for a red/black color field (defined as an
+  [unscoped enum](https://stackoverflow.com/questions/8115550/what-is-the-size-of-an-enum-type-data-in-c)),
+  and 4 bytes of padding.
+- The string key is another 32 bytes per node.
+- The struct used to keep track of the stats for each station is 16 bytes, as
+  seen in the above sample.
+
+  <div className="mt-2" />
+
+  Note that the sum of the temperature readings needs to be 64-bits in the worst
+  case where every reading is 99.9 at the same station. All 270 million rows
+  landing on one station sums to approximately $$2.7 \times 10^{10}$$, which is
+  greater than the maximum value of a `uint32_t`, $$4.3 \times 10^9$$.
+
+<div className="h-5" />
+
+One thing to note is that every node create calls its own `operator new`, and
+glibc's allocator prepends an 8-byte header and rounds the result up to a
+16-byte boundary, so an 80-byte request occupies a 96-byte chunk. So, this means
+that, across all threads, the maps allocate
+
+<div className="h-5" />
+
+$$
+96 \times 10,000 \times 12 \approx 11 \text{ MiB}
+$$
+
+<div className="h-5" />
+
+Eleven megabytes against 16 GB of RAM sounds like a small price to pay, however,
+it is important to note that my machine only has 12 MiB of L3 cache that is
+shared across all six cores. The twelve maps fill 92% of L3 before a single byte
+of the input is read. Moving one level up and considering the L2 cache, it's
+worse still: two threads share a core's 256 KiB L2 between two ~940 KiB trees,
+so in practice every lookup misses L2.
