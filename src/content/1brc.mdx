@@ -49,6 +49,10 @@ familiar.
       title: "Optimization 1: Poor Man's Map",
       anchor: "#optimization-1-poor-mans-map",
     },
+    {
+      title: "Optimization 2: SIMD / SWAR",
+      anchor: "#optimization-2-simd--swar",
+    },
   ]}
 />
 
@@ -428,5 +432,60 @@ which it can no longer fold into a pair of loads (for more on this, read
 [here](https://www.learncpp.com/cpp-tutorial/the-as-if-rule-and-compile-time-optimization/)).
 Reading the maximum costs two `and` instructions instead, and since every name
 is followed by a delimiter and a reading, the bytes we overshoot into are still
-part of the same line. Note that the masks themselves can be computed at compile
-time, one per possible name length.
+part of the same line. Note that the 15 possible bytemasks for the station names
+themselves can be computed at compile time, one per possible name length.
+
+<div className="h-5" />
+
+Putting the fixed-size keys, the compile-time masks, and the new hash function
+together, we get another great performance improvement over the previous
+iteration:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.92015 \pm 0.00173 \\
+\text{Context switches} & 79 \\
+\text{Page faults} & 66{,}721 \\
+\text{Instructions per cycle} & 0.88 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 3: Fixed-size keys and hashing, 270 million rows}
+$$
+
+<div className="h-5" />
+
+The instruction count fell from 65 billion to 36 billion and instructions per
+cycle rose from 0.66 to 0.88, so we're doing less work and stalling less often
+while we do it.
+
+<div className="h-5" />
+
+## **Optimization 2**: SIMD / SWAR
+
+Going back to the naive approach, each thread found the delimiters on a line
+with `std::ranges::find`, which walks the line one byte at a time, comparing
+each character against the delimiter and branching on the result. Branch
+mispredicts can cost us a lot of clock cycles, so it is in our best interest to
+remove them when possible. One look at `perf report` revealed that nearly 20% of
+the execution's clock cycles were spent within these searches, so it made sense
+to turn to an alternative in this case, which was SIMD. Most CPU cores come with
+a set of wide registers that allow a single instruction to operate on several
+values at once, and the i5-10400 on my workbench has sixteen 256-bit registers
+through AVX2. Since a station name is at most 15 bytes, the name and the
+semicolon that follows it always fits within the 32 bytes that one of these
+registers holds. So, instead of checking one character at a time, we can load 32
+bytes of the line into a register, compare every byte against a semicolon in a
+single instruction, and reduce the result to a 32-bit mask whose lowest set bit
+marks the position of the delimiter. The same trick finds the newline, and
+neither search loops nor branches per character. Since these registers can hold
+32 bytes, we could, in the best case, find the delimiters of
+$$\lfloor \tfrac{32}{6} \rfloor = 5$$ readings at a time (more on this later).
