@@ -295,17 +295,19 @@ std::vector<Slot> table(1u << 14);
 <div className="h-5" />
 
 By reserving space for the vector upfront, we bypass the need to request extra
-memory on every insert. A power-of-two capacity helps too, since mapping a hash
-to a slot becomes `hash & (capacity - 1)` instead of a division.
+memory on every insert. A power-of-two capacity allows us to map a hash to a
+slot using the bitwise and operation instead of division via
+`hash & (capacity - 1)`.
 
 <div className="h-5" />
 
-With 10,000 stations in 16,384 slots our load factor is $$\alpha \approx 0.61$$.
-Using standard linear probing, finding a key that is already present takes
-approximately $$\frac{1}{2}(1 + \frac{1}{1 - \alpha}) \approx 1.78$$ probes.
-Those extra probes are nearly free, though, since every slot is 32 bytes and
-aligned, so two slots share a cache line and spatial locality means the next
-slot is usually already present.
+With 10,000 stations in 16,384 slots, our load factor is
+$$\alpha \approx 0.61$$. Using standard linear probing, finding a key that is
+already present takes approximately
+$$\frac{1}{2}(1 + \frac{1}{1 - \alpha}) \approx 1.78$$ probes. Those extra
+probes are nearly free, though, since every slot is 32 bytes and aligned, so two
+slots share a cache line and spatial locality means the next slot is usually
+already present.
 
 <div className="h-5" />
 
@@ -362,3 +364,69 @@ $$
 $$
 
 <div className="h-5" />
+
+One detail that I glanced over was the hash function that I opted to use: a
+[64-bit fnv1a hash](https://www.isthe.com/chongo/tech/comp/fnv/), which XORs
+each character of the station name into a 64-bit accumulator and multiplies by a
+prime. My initial implementation resembled the following code snippet:
+
+<div className="h-5" />
+
+```cpp
+static constexpr uint64_t hash(std::string_view sv) {
+  uint64_t h = 14695981039346656037ull;
+  for (unsigned char c : sv) {
+    h ^= c;
+    h *= 1099511628211ull;
+  }
+  h ^= h >> 32; // avalanche
+
+  return h;
+}
+```
+
+<div className="h-5" />
+
+Note that the above constants are the "fnv1a" prime and offset basis, which
+abide by some constraints that I do not understand myself. Also, it is worth
+noting that the avalanche step at the end mixes the high bits down into the low
+ones I index with. The important thing to note from this snippet is that we must
+process each character in the station name serially, since each calculation
+depends on the value from the previous. To bypass this, we can use the fact that
+station names are $$\le 15$$ bytes, allowing us to store the ASCII values of the
+characters in two 64-bit integers. Now, the number of operations needed to
+compute a hash stops growing with the size of the key: a three character station
+name now costs the same to hash as a fifteen character one. I also opted to use
+a
+[fmix64 hash](https://encode.su/threads/1747-Extremely-fast-hash#post_message_34156),
+based off of murmurhash, to compute the hash in three multiplications and three
+shifts:
+
+<div className="h-5" />
+
+```cpp
+static constexpr uint64_t hash(uint64_t s0, uint64_t s1) {
+  uint64_t h = s0 ^ (s1 * 1099511628211ull);
+  h ^= h >> 33;
+  h *= 0xff51afd7ed558ccdull;
+  h ^= h >> 33;
+  h *= 0xc4ceb9fe1a85ec53ull;
+  h ^= h >> 33;
+  return h;
+}
+```
+
+<div className="h-5" />
+
+Both integers are loaded straight out of the mapped file with a pair of 8-byte
+`memcpy` calls, then masked down to just the station name. We read all 16 bytes
+regardless of how long the name is, but we can mask any bytes that run past the
+name if we know the position of the delimiter that follows it (more on
+optimizing this later). Reading only as many bytes as the name actually occupies
+would mean either branching on the length or handing `memcpy` a runtime size,
+which it can no longer fold into a pair of loads (for more on this, read
+[here](https://www.learncpp.com/cpp-tutorial/the-as-if-rule-and-compile-time-optimization/)).
+Reading the maximum costs two `and` instructions instead, and since every name
+is followed by a delimiter and a reading, the bytes we overshoot into are still
+part of the same line. Note that the masks themselves can be computed at compile
+time, one per possible name length.
