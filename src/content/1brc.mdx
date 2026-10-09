@@ -569,12 +569,12 @@ reliably. The fix I found
 [here](https://github.com/merykitty/1brc/blob/1a4ac0d2496e9329534370eaf01b28e77658b073/src/main/java/dev/morling/onebrc/CalculateAverage_merykitty.java),
 from another programmer attempting the same challenge, used SWAR (SIMD within a
 register), which applies the same idea as SIMD to an ordinary 64-bit
-general-purpose register. A reading is at most 6 bytes long (e.g. `-99.9` and
-the newline), so the entire reading fits into a single 8-byte load and its value
-can be pulled out with some bit manipulation and a single multiplication,
-without branching on the sign or the number of digits. I still don't understand
-fully how this works; it is quite the feat. Credit to
-[merykitty](https://github.com/merykitty) who pioneered the method.
+general-purpose register. A reading is at most 6 bytes long (`-99.9` and the
+newline), so the entire reading fits into a single 8-byte load and its value can
+be pulled out with some bit manipulation and a single multiplication, without
+branching on the sign or the number of digits. I still don't understand fully
+how this works; it is quite the feat. Credit to
+[merykitty](https://github.com/merykitty), who pioneered the method.
 
 <div className="h-5" />
 
@@ -585,7 +585,7 @@ where each of its digits sits, and each reading starts at a different offset
 within the register, so AVX2 provides no easy way to line them up in lanes and
 parse several at once. To solve this, we have the SIMD search only return the
 position of the semicolon, and the 8 bytes after it are loaded again into a
-general-purpose register to be parsed one reading at a time (If there is a
+general-purpose register to be parsed one reading at a time (if there is a
 clever way to work around this double load, please let me know). SWAR also finds
 the end of the line on its own, since the newline always sits two bytes after
 the decimal point, which makes the SIMD search for the newline redundant.
@@ -643,14 +643,14 @@ s1 &= station_masks[station_length - sep];
 <div className="h-5" />
 
 This branch will likely be mispredicted on around half of the lines, leading to
-around 135 million pipeline flushes, costing around 20 cycles each (that may be
-a generous estimate. I did not test how long they took). To get rid of it, I
-replaced the 9 single masks with a lookup table of mask pairs, one for each
-possible name length. The previous version had to compare the length against the
-size of the integers where the names were stored (8 bytes) to decide how the
-name splits across the two integers before it could look up either mask. The new
-table bakes that split into every entry, so a single lookup by the full length
-returns both masks and nothing compares against the length at all:
+around 135 million pipeline flushes, costing around 20 cycles each (a rough
+estimate, which I check below). To get rid of it, I replaced the 9 single masks
+with a lookup table of mask pairs, one for each possible name length. The
+previous version had to compare the length against the size of the integers
+where the names were stored (8 bytes) to decide how the name splits across the
+two integers before it could look up either mask. The new table bakes that split
+into every entry, so a single lookup by the full length returns both masks and
+nothing compares against the length at all:
 
 <div className="h-5" />
 
@@ -690,7 +690,8 @@ $$
 Branch mispredicts fell from 166 million to 32 million, which confirms that the
 `std::min` was responsible for most of them, and only 2.77% of branches now
 mispredict. The wall clock also fell to 0.796 seconds, beating the 0.822 seconds
-from Table 4.
+from Table 4. Cycles fell by 2.5 billion as well, which puts each removed
+mispredict at no more than about 18 cycles, in line with the estimate above.
 
 <div className="h-5" />
 
@@ -702,4 +703,53 @@ the time. A branchless computation can't be speculated past, so every reading
 now pays the full cost of the bit manipulation, and the branchless version even
 executes slightly more instructions, 23.4 billion versus 23.0 billion.
 
-## Optimization 3: Thread Count
+## **Optimization 3**: Thread Count
+
+Up until now, every run has used twelve threads, one for each logical CPU that
+`std::thread::hardware_concurrency()` reports. I thought that this would
+maximize performance, falling for the "more threads implies greater throughput"
+fallacy. However, the i5-10400 only has six physical cores, and hyperthreading
+runs two threads on each one, with those two threads sharing execution units and
+its L1 and L2 caches. What I failed to realize is how this would affect
+performance, especially with threads fighting for cache space. To evaluate the
+effect the number of threads had on the throughput of my program, I ran it with
+all possible thread counts and compared the average runtimes across 1 cold run
+and 4 warm runs.
+
+<div className="h-5" />
+
+Sweeping from one to twelve threads:
+
+<div className="flex justify-center mt-6">
+  <img
+    src="/1brc_threads_elapsed.png"
+    alt="Wall clock against thread count, lowest at six threads"
+    width="70%"
+  />
+</div>
+<figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
+  Wall clock vs. thread count, 270 million rows
+</figcaption>
+
+The wall clock falls steadily up to six threads, bottoming out at 0.553 seconds,
+then jumps to 0.731 seconds at seven and never recovers. Past six threads, each
+additional thread doubles up on a core, competing for its caches as well. Every
+thread keeps its own table. Six tables take up half of the 12 MiB L3, but twelve
+fill it entirely before a single byte of input is read. Sure enough, the LLC
+(last level cache) load misses stay flat at around 5 million up to six threads,
+then climb with every thread after that, reaching over 26 million at twelve:
+
+<div className="flex justify-center mt-6">
+  <img
+    src="/1brc_threads_llc.png"
+    alt="LLC load misses against thread count, flat until six threads then rising"
+    width="70%"
+  />
+</div>
+<figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
+  LLC load misses vs. thread count, 270 million rows
+</figcaption>
+
+Setting the thread count to six, a one-line change, brought the wall clock from
+0.656 seconds to 0.554 seconds, a 15.5% improvement and the largest single gain
+since the poor man's map. Instructions per cycle also jumped from 0.92 to 2.15.
