@@ -53,6 +53,10 @@ familiar.
       title: "Optimization 2: SIMD / SWAR",
       anchor: "#optimization-2-simd--swar",
     },
+    {
+      title: "Optimization 3: Thread Count",
+      anchor: "#optimization-3-thread-count",
+    },
   ]}
 />
 
@@ -551,25 +555,25 @@ billion to 23 billion, so we're doing far less work overall. Branch mispredicts
 fell from 710 million to 196 million too, even though a larger percentage of
 branches now mispredict, since the total number of branches dropped from 11.6
 billion to 1.7 billion. This solved part of the branch mispredict issue, but we
-are still mispredicting $$\approx 11.33 \%$$ of all branches.
+are still mispredicting $$\sim 11.33 \%$$ of all branches.
 
 <div className="h-5" />
 
 The remaining branch mispredicts are still the glaring issue here, even after
 improving our delimiter search. I had reason to believe, from more digging
-through `perf report` that most of them came from parsing the temperature, which
-checks for a minus sign and for whether the reading has one or two digits before
-the decimal point. Since the temperature readings in the input are generated at
-random, I originally figured neither check could be predicted reliably. The fix
-I found
+through `perf report`, that most of them came from parsing the temperature,
+which checks for a minus sign and for whether the reading has one or two digits
+before the decimal point. Since the temperature readings in the input are
+generated at random, I originally figured neither check could be predicted
+reliably. The fix I found
 [here](https://github.com/merykitty/1brc/blob/1a4ac0d2496e9329534370eaf01b28e77658b073/src/main/java/dev/morling/onebrc/CalculateAverage_merykitty.java),
-from another programmer attempting the same challenge used SWAR (SIMD within a
+from another programmer attempting the same challenge, used SWAR (SIMD within a
 register), which applies the same idea as SIMD to an ordinary 64-bit
-general-purpose register. A reading is at most 6 bytes long (`-99.9` and the
-newline), so the entire reading fits into a single 8-byte load and its value can
-be pulled out with some bit manipulation and a single multiplication, without
-branching on the sign or the number of digits. I still don't understand fully
-how this works; it is quite the feat. Credit to
+general-purpose register. A reading is at most 6 bytes long (e.g. `-99.9` and
+the newline), so the entire reading fits into a single 8-byte load and its value
+can be pulled out with some bit manipulation and a single multiplication,
+without branching on the sign or the number of digits. I still don't understand
+fully how this works; it is quite the feat. Credit to
 [merykitty](https://github.com/merykitty) who pioneered the method.
 
 <div className="h-5" />
@@ -588,7 +592,7 @@ the decimal point, which makes the SIMD search for the newline redundant.
 
 <div className="h-5" />
 
-My implementation can be found
+My implementation of the SWAR temperature parse can be found
 [here](https://github.com/artiehumphreys/1brc/blob/main/include/utils.hpp#L79).
 Running this new temperature parse against the same input:
 
@@ -614,46 +618,44 @@ $$
 
 <div className="h-5" />
 
-Surprisingly, the program got slower: the wall clock rose from 0.822 seconds to
-0.855 seconds, even though branch mispredicts fell from 196 million to 166
-million. However, the disassembly revealed that the `std::min` call used to
-split the station name across the two 8-byte integers had compiled to a branch.
-Since station names vary randomly in length, that branch was responsible for the
-vast majority of the remaining mispredicts.
+Surprisingly, this change caused the program to run slower with the average wall
+clock rising from 0.822 seconds to 0.855 seconds, even though branch mispredicts
+fell from 196 million to 166 million. As it turns out, after digging through the
+disassembly, there was a different root to the branch misprediction issue than I
+originally expected: the `std::min` call used to split the station name across
+the two 8-byte integers had compiled to a branch. Since station names vary
+randomly in length, that branch was responsible for the vast majority of the
+remaining mispredicts. Here's how I attempted this at first:
 
 <div className="h-5" />
 
 ```cpp
-// bytes 0-7 of the name go in s0, bytes 8-15 in s1
+// RECALL: store the name in two 8-byte integers (name <= 15 bytes)
+std::memcpy(&s0, begin, sizeof(uint64_t));
+std::memcpy(&s1, begin + sizeof(uint64_t), sizeof(uint64_t));
+
+// "branchless" store name (assumes little endian layout)
 const size_t sep = std::min(station_length, size_t{8}); // compiles to a branch
-// extract relevant bytes for station name
 s0 &= station_masks[sep];
 s1 &= station_masks[station_length - sep];
 ```
 
 <div className="h-5" />
 
-As for why the program got slower with fewer mispredicts, I believe it comes
-down to a control dependency versus a data dependency. A branch can be
-speculated past, so when the CPU guesses correctly, the check costs next to
-nothing, and the digit check would have been guessed correctly about 90% of the
-time. A branchless computation can't be speculated past, so every reading now
-pays the full cost of the bit manipulation, and the branchless version even
-executes slightly more instructions, 23.4 billion versus 23.0 billion.
-
-<div className="h-5" />
-
-To get rid of the `std::min` branch, I replaced the 9 single masks with a lookup
-table of mask pairs, one for each possible name length. The previous version had
-to compare the length against 8 to decide how the name splits across the two
-integers before it could look up either mask. The new table bakes that split
-into every entry, so a single lookup by the full length returns both masks and
-nothing compares against the length at all:
+This branch will likely be mispredicted on around half of the lines, leading to
+around 135 million pipeline flushes, costing around 20 cycles each (that may be
+a generous estimate. I did not test how long they took). To get rid of it, I
+replaced the 9 single masks with a lookup table of mask pairs, one for each
+possible name length. The previous version had to compare the length against the
+size of the integers where the names were stored (8 bytes) to decide how the
+name splits across the two integers before it could look up either mask. The new
+table bakes that split into every entry, so a single lookup by the full length
+returns both masks and nothing compares against the length at all:
 
 <div className="h-5" />
 
 ```cpp
-// one {low, high} mask pair per name length, built at compile time
+// one {low, high} mask pair per possible name length, built at compile time
 const StationNameMask station_name_mask = station_masks[station_length];
 s0 &= station_name_mask.low_bytes;
 s1 &= station_name_mask.high_bytes;
@@ -687,5 +689,17 @@ $$
 
 Branch mispredicts fell from 166 million to 32 million, which confirms that the
 `std::min` was responsible for most of them, and only 2.77% of branches now
-mispredict. The wall clock fell to 0.796 seconds, finally beating the 0.822
-seconds from Table 4.
+mispredict. The wall clock also fell to 0.796 seconds, beating the 0.822 seconds
+from Table 4.
+
+<div className="h-5" />
+
+As for why the SWAR parse made the program slower with fewer mispredicts, I
+believe it comes down to a control dependency versus a data dependency. A branch
+can be speculated past, so when the CPU guesses correctly, the check costs next
+to nothing, and the digit check would have been guessed correctly about 90% of
+the time. A branchless computation can't be speculated past, so every reading
+now pays the full cost of the bit manipulation, and the branchless version even
+executes slightly more instructions, 23.4 billion versus 23.0 billion.
+
+## Optimization 3: Thread Count
