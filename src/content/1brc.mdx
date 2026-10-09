@@ -432,8 +432,9 @@ which it can no longer fold into a pair of loads (for more on this, read
 [here](https://www.learncpp.com/cpp-tutorial/the-as-if-rule-and-compile-time-optimization/)).
 Reading the maximum costs two `and` instructions instead, and since every name
 is followed by a delimiter and a reading, the bytes we overshoot into are still
-part of the same line. Note that the 15 possible bytemasks for the station names
-themselves can be computed at compile time, one per possible name length.
+part of the same line. Note that the 9 possible bytemasks can be computed at
+compile time, one for each number of bytes (0 through 8) the name can occupy in
+either integer.
 
 <div className="h-5" />
 
@@ -517,3 +518,174 @@ cache.
 
   </div>
 </aside>
+
+<div className="h-5" />
+
+Running the AVX2 search against the same input:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.82234 \pm 0.00042 \\
+\text{Context switches} & 101 \\
+\text{Page faults} & 66{,}721 \\
+\text{Instructions per cycle} & 0.64 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 4: AVX2 delimiter search, 270 million rows}
+$$
+
+<div className="h-5" />
+
+Note that instructions per cycle actually fell from 0.88 to 0.64, which looks
+like a regression at first glance. However, the instruction count fell from 36
+billion to 23 billion, so we're doing far less work overall. Branch mispredicts
+fell from 710 million to 196 million too, even though a larger percentage of
+branches now mispredict, since the total number of branches dropped from 11.6
+billion to 1.7 billion. This solved part of the branch mispredict issue, but we
+are still mispredicting $$\approx 11.33 \%$$ of all branches.
+
+<div className="h-5" />
+
+The remaining branch mispredicts are still the glaring issue here, even after
+improving our delimiter search. I had reason to believe, from more digging
+through `perf report` that most of them came from parsing the temperature, which
+checks for a minus sign and for whether the reading has one or two digits before
+the decimal point. Since the temperature readings in the input are generated at
+random, I originally figured neither check could be predicted reliably. The fix
+I found
+[here](https://github.com/merykitty/1brc/blob/1a4ac0d2496e9329534370eaf01b28e77658b073/src/main/java/dev/morling/onebrc/CalculateAverage_merykitty.java),
+from another programmer attempting the same challenge used SWAR (SIMD within a
+register), which applies the same idea as SIMD to an ordinary 64-bit
+general-purpose register. A reading is at most 6 bytes long (`-99.9` and the
+newline), so the entire reading fits into a single 8-byte load and its value can
+be pulled out with some bit manipulation and a single multiplication, without
+branching on the sign or the number of digits. I still don't understand fully
+how this works; it is quite the feat. Credit to
+[merykitty](https://github.com/merykitty) who pioneered the method.
+
+<div className="h-5" />
+
+The catch with this approach that doesn't pair well with the previous
+optimization is that SWAR lives in a general-purpose register, not the vector
+registers that we just used to find the delimiters. Parsing a number depends on
+where each of its digits sits, and each reading starts at a different offset
+within the register, so AVX2 provides no easy way to line them up in lanes and
+parse several at once. To solve this, we have the SIMD search only return the
+position of the semicolon, and the 8 bytes after it are loaded again into a
+general-purpose register to be parsed one reading at a time (If there is a
+clever way to work around this double load, please let me know). SWAR also finds
+the end of the line on its own, since the newline always sits two bytes after
+the decimal point, which makes the SIMD search for the newline redundant.
+
+<div className="h-5" />
+
+My implementation can be found
+[here](https://github.com/artiehumphreys/1brc/blob/main/include/utils.hpp#L79).
+Running this new temperature parse against the same input:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.85505 \pm 0.00219 \\
+\text{Context switches} & 105 \\
+\text{Page faults} & 66{,}721 \\
+\text{Instructions per cycle} & 0.63 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 5: SWAR temperature parsing, 270 million rows}
+$$
+
+<div className="h-5" />
+
+Surprisingly, the program got slower: the wall clock rose from 0.822 seconds to
+0.855 seconds, even though branch mispredicts fell from 196 million to 166
+million. However, the disassembly revealed that the `std::min` call used to
+split the station name across the two 8-byte integers had compiled to a branch.
+Since station names vary randomly in length, that branch was responsible for the
+vast majority of the remaining mispredicts.
+
+<div className="h-5" />
+
+```cpp
+// bytes 0-7 of the name go in s0, bytes 8-15 in s1
+const size_t sep = std::min(station_length, size_t{8}); // compiles to a branch
+// extract relevant bytes for station name
+s0 &= station_masks[sep];
+s1 &= station_masks[station_length - sep];
+```
+
+<div className="h-5" />
+
+As for why the program got slower with fewer mispredicts, I believe it comes
+down to a control dependency versus a data dependency. A branch can be
+speculated past, so when the CPU guesses correctly, the check costs next to
+nothing, and the digit check would have been guessed correctly about 90% of the
+time. A branchless computation can't be speculated past, so every reading now
+pays the full cost of the bit manipulation, and the branchless version even
+executes slightly more instructions, 23.4 billion versus 23.0 billion.
+
+<div className="h-5" />
+
+To get rid of the `std::min` branch, I replaced the 9 single masks with a lookup
+table of mask pairs, one for each possible name length. The previous version had
+to compare the length against 8 to decide how the name splits across the two
+integers before it could look up either mask. The new table bakes that split
+into every entry, so a single lookup by the full length returns both masks and
+nothing compares against the length at all:
+
+<div className="h-5" />
+
+```cpp
+// one {low, high} mask pair per name length, built at compile time
+const StationNameMask station_name_mask = station_masks[station_length];
+s0 &= station_name_mask.low_bytes;
+s1 &= station_name_mask.high_bytes;
+```
+
+<div className="h-5" />
+
+Running this against the same input:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.79553 \pm 0.00049 \\
+\text{Context switches} & 84 \\
+\text{Page faults} & 66{,}722 \\
+\text{Instructions per cycle} & 0.63 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 6: Branchless station name masking, 270 million rows}
+$$
+
+<div className="h-5" />
+
+Branch mispredicts fell from 166 million to 32 million, which confirms that the
+`std::min` was responsible for most of them, and only 2.77% of branches now
+mispredict. The wall clock fell to 0.796 seconds, finally beating the 0.822
+seconds from Table 4.
