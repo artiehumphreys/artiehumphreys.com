@@ -476,16 +476,44 @@ with `std::ranges::find`, which walks the line one byte at a time, comparing
 each character against the delimiter and branching on the result. Branch
 mispredicts can cost us a lot of clock cycles, so it is in our best interest to
 remove them when possible. One look at `perf report` revealed that nearly 20% of
-the execution's clock cycles were spent within these searches, so it made sense
-to turn to an alternative in this case, which was SIMD. Most CPU cores come with
-a set of wide registers that allow a single instruction to operate on several
-values at once, and the i5-10400 on my workbench has sixteen 256-bit registers
-through AVX2. Since a station name is at most 15 bytes, the name and the
-semicolon that follows it always fits within the 32 bytes that one of these
-registers holds. So, instead of checking one character at a time, we can load 32
-bytes of the line into a register, compare every byte against a semicolon in a
-single instruction, and reduce the result to a 32-bit mask whose lowest set bit
-marks the position of the delimiter. The same trick finds the newline, and
-neither search loops nor branches per character. Since these registers can hold
-32 bytes, we could, in the best case, find the delimiters of
-$$\lfloor \tfrac{32}{6} \rfloor = 5$$ readings at a time (more on this later).
+the program's clock cycles were spent within these searches, so it made sense to
+turn to SIMD instead. Most CPU cores come with a set of wide registers that
+allow a single instruction to operate on several values at once, and the
+i5-10400 on my workbench has sixteen 256-bit registers through AVX2. Since a
+station name is at most 15 bytes, the name and the semicolon that follows it
+always fit within the 32 bytes that one of these registers holds. So, instead of
+checking one character at a time, we can load 32 bytes of the line into a
+register, compare every byte against a semicolon in a single instruction, and
+reduce the result to a 32-bit mask whose lowest set bit marks the position of
+the delimiter. The same trick finds the newline, and neither search loops nor
+branches per character. In the best case, a single load could find the
+delimiters of $$\lfloor \tfrac{32}{6} \rfloor = 5$$ readings at a time (more on
+this later).
+
+<div className="h-5" />
+
+A SIMD load from L1 usually takes between 5 and 7 cycles on AVX2, which is a
+small price to pay for the boost in processing throughput.
+
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
+  <div className="mx-2" />
+
+**Aside: Speculative Read-ahead**
+
+  <div className="mt-2">
+
+It is important to discern the OS's behavior when it comes to loading the mapped
+file into memory. As it turns out, there is functionality for
+[prefetching pages of the mapped file](https://stackoverflow.com/questions/19653618/mmap-will-the-mapped-file-be-loaded-into-memory-immediately).
+Linux provides a configurable variable named `read_ahead_kb` that denotes how
+many kilobytes of a file the kernel can fetch into the page cache in advance.
+This value is 128 by default, or 32 pages. Normally, this allows for reading on
+both sides of the faulting address. However, by alerting the kernel that we will
+access these pages sequentially via the system call
+[`madvise(MADV_SEQUENTIAL)`](https://man7.org/linux/man-pages/man2/madvise.2.html),
+it instead reads ahead only in the direction we're scanning. Note that this only
+matters on a cold run, since a warm run finds every page already in the page
+cache.
+
+  </div>
+</aside>
