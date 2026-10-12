@@ -296,8 +296,8 @@ struct alignas(32) Slot {
   int64_t sum;
 };
 
-// one per thread, 16K slots for at most 10,000 stations
-std::vector<Slot> table(1u << 14);
+// one per thread, 32K slots for at most 10,000 stations
+std::vector<Slot> table(1u << 15);
 ```
 
 <div className="h-5" />
@@ -309,10 +309,10 @@ slot using the bitwise and operation instead of division via
 
 <div className="h-5" />
 
-With 10,000 stations in 16,384 slots, our load factor is
-$$\alpha \approx 0.61$$. Using standard linear probing, finding a key that is
+With 10,000 stations in 32,768 slots, our load factor is
+$$\alpha \approx 0.31$$. Using standard linear probing, finding a key that is
 already present takes approximately
-$$\frac{1}{2}(1 + \frac{1}{1 - \alpha}) \approx 1.78$$ probes. Those extra
+$$\frac{1}{2}(1 + \frac{1}{1 - \alpha}) \approx 1.22$$ probes. Those extra
 probes are nearly free, though, since every slot is 32 bytes and aligned, so two
 slots share a cache line and spatial locality means the next slot is usually
 already present.
@@ -330,15 +330,21 @@ $$
  & \textbf{std::map} & \textbf{poor man's map} \\
 \hline
 \text{Bytes per station} & 96 & 32 \\
-\text{Footprint per thread} & 937 \text{ KiB} & 512 \text{ KiB} \\
-\text{Footprint, twelve threads} & 11 \text{ MiB} & 6 \text{ MiB} \\
-\text{Share of L3} & 92\% & 50\% \\
-\text{Loads per lookup} & 26 \text{ worst case} & \sim 1.8 \text{ expected} \\
-\text{Key comparisons per lookup} & 26 & \sim 1.8 \\
+\text{Footprint per thread} & 937 \text{ KiB} & 1 \text{ MiB} \\
+\text{Footprint, twelve threads} & 11 \text{ MiB} & 12 \text{ MiB} \\
+\text{Share of L3} & 92\% & 100\% \\
+\text{Loads per lookup} & 26 \text{ worst case} & \sim 1.2 \text{ expected} \\
+\text{Key comparisons per lookup} & 26 & \sim 1.2 \\
 \text{Allocations per thread} & 10{,}000 & 1 \\
 \hline
 \end{array}
 $$
+
+<div className="h-5" />
+
+Note that the poor man's map actually reserves more memory than the trees, since
+over two-thirds of its slots sit empty. But, this means that a lookup only ever
+touches, in the average case, the one or two slots its hash points to.
 
 <div className="h-5" />
 
@@ -550,7 +556,7 @@ $$
 <div className="h-5" />
 
 Note that instructions per cycle actually fell from 0.88 to 0.64, which looks
-like a regression at first glance. However, the instruction count fell from 36
+like undesired at first glance. However, the instruction count fell from 36
 billion to 23 billion, so we're doing far less work overall. Branch mispredicts
 fell from 710 million to 196 million too, even though a larger percentage of
 branches now mispredict, since the total number of branches dropped from 11.6
@@ -697,11 +703,11 @@ mispredict at no more than about 18 cycles, in line with the estimate above.
 
 As for why the SWAR parse made the program slower with fewer mispredicts, I
 believe it comes down to a control dependency versus a data dependency. A branch
-can be speculated past, so when the CPU guesses correctly, the check costs next
-to nothing, and the digit check would have been guessed correctly about 90% of
-the time. A branchless computation can't be speculated past, so every reading
-now pays the full cost of the bit manipulation, and the branchless version even
-executes slightly more instructions, 23.4 billion versus 23.0 billion.
+can be speculated past, in which case the digit check guesses correctly and
+incurs no cost. The digit check also would have been guessed correctly about 90%
+of the time, given 190 out of the 1990 possible temperature measurements have a
+single-digit integer part. On the other hand, a branchless computation can't be
+speculated past, so we never encounter a zero-cost digit check.
 
 ## **Optimization 3**: Thread Count
 
@@ -713,8 +719,8 @@ runs two threads on each one, with those two threads sharing execution units and
 its L1 and L2 caches. What I failed to realize is how this would affect
 performance, especially with threads fighting for cache space. To evaluate the
 effect the number of threads had on the throughput of my program, I ran it with
-all possible thread counts and compared the average runtimes across 1 cold run
-and 4 warm runs.
+all possible thread counts and compared the average runtimes across five warm
+runs.
 
 <div className="h-5" />
 
@@ -731,13 +737,14 @@ Sweeping from one to twelve threads:
   Wall clock vs. thread count, 270 million rows
 </figcaption>
 
-The wall clock falls steadily up to six threads, bottoming out at 0.553 seconds,
-then jumps to 0.731 seconds at seven and never recovers. Past six threads, each
-additional thread doubles up on a core, competing for its caches as well. Every
-thread keeps its own table. Six tables take up half of the 12 MiB L3, but twelve
-fill it entirely before a single byte of input is read. Sure enough, the LLC
-(last level cache) load misses stay flat at around 5 million up to six threads,
-then climb with every thread after that, reaching over 26 million at twelve:
+The wall clock falls steadily up to six threads, bottoming out at 0.740 seconds,
+then jumping to 0.954 seconds at seven and not recovering the gains we got from
+6 threads. Past six threads, each additional thread doubles up on a core,
+competing for its caches as well. Every thread keeps its own 1 MiB table. Six
+tables take up half of the 12 MiB L3, but twelve fill it entirely before a
+single byte of input is read. Sure enough, the LLC (last level cache) load
+misses stay flat at around 4.4 million up to six threads, then climb with every
+thread after that, reaching over 32 million at twelve:
 
 <div className="flex justify-center mt-6">
   <img
@@ -751,5 +758,25 @@ then climb with every thread after that, reaching over 26 million at twelve:
 </figcaption>
 
 Setting the thread count to six, a one-line change, brought the wall clock from
-0.656 seconds to 0.554 seconds, a 15.5% improvement and the largest single gain
-since the poor man's map. Instructions per cycle also jumped from 0.92 to 2.15.
+0.796 seconds to 0.739 seconds, a 7.1% improvement. Instructions per cycle also
+jumped from 0.63 to 1.32.
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.73902 \pm 0.00353 \\
+\text{Context switches} & 22 \\
+\text{Page faults} & 65{,}155 \\
+\text{Instructions per cycle} & 1.32 \\
+\text{Effective clock (GHz)} & 3.98 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 7: Six threads, 270 million rows}
+$$
