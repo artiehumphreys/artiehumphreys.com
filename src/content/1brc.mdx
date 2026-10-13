@@ -24,7 +24,8 @@ familiar.
     <strong>Problem Statement:</strong> You are given a text file with $$n$$
     temperature measurements from $$m$$ different weather stations. You need
     to calculate the min, max, and mean temperature at each weather station.
-    The program should print out its results alphabetically ordered by station.
+    The program should write its results to an output file, alphabetically
+    ordered by station.
     The problem has the following constraints, which I fudged a little for a
     cleaner implementation:
 
@@ -210,7 +211,7 @@ is cheap as well, since each thread's table holds at most 10,000 entries, so
 folding all twelve into one costs at most 120,000 updates. The catch is that
 each of the 270 million upserts completed while reading the file has to locate
 its key by descending the tree, and the tree is only shaped that way to give me
-an ordering I need exactly once, after the merge, to print 10,000 lines.
+an ordering I need exactly once, after the merge, to write 10,000 lines.
 
 <aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
   **Aside: SSO**
@@ -803,8 +804,35 @@ runtime to under a second on a fairly dated, budget processor. However, I knew
 there was still some performance on the table. Finding what worked required lots
 of trial and error; below is a list of the small nits that won and lost me time.
 All of these were built and tested on top of my six-thread program, and I'll
-start with the ones that didn't work out.
+start with the ones that didn't work out. Assume that any mention of a map or a
+table refers to the Poor Man's Map I implemented per Optimization 1.
 
 ### What Didn't Work
+
+1. **Decreasing Table Size**: Halving the size of the table to 16,384 slots
+   (from 32,768 slots) shrank each thread's table to 512 KiB, which nearly
+   halved LLC load misses from 4.32 million to 2.27 million in my testing.
+   However, the load factor doubled to $$\alpha \approx 0.61$$, so a lookup took
+   about 1.78 probes instead of 1.22. This was reflected in the number of branch
+   mispredicts, which skyrocketed from 32 million to 82 million. This change
+   increased my average wall clock time by 8.7%.
+2. **Buffering Writes (Instead of Batching)**: Upon completion of processing a
+   chunk of the input file, each thread returns a map. The batching described
+   below writes 32 lines back to the table at once, so only one iteration incurs
+   the cost of the writes. I tried spreading that out with a ring buffer that
+   writes back one line per iteration, amortizing, in theory, the work done by
+   the batched write. However, this change added 3.9 billion instructions, and
+   even with instructions per cycle rising from 2.15 to 2.40, it ran slower.
+3. **Disabling Source Fortification**: It turns out that glibc provides
+   protection against buffer overflows via a feature called
+   [source fortification](https://www.sourceware.org/glibc/manual/2.44/html_node/Source-Fortification.html),
+   which some GCC builds enable by default. Since I load each station name as
+   raw bytes from the mapped file with two `memcpy` calls, I assumed each one
+   carried a runtime bounds check, as `memcpy` is one of the functions it
+   hardens. However, building with `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0`
+   didn't reduce the instruction count. Each copy is a constant 8 bytes into an
+   8-byte integer, so the compiler had already proven the bounds checks
+   unnecessary. A 0.7% difference is the same as what I got from rebuilding
+   identical code, so this one is noise.
 
 ### What Worked
