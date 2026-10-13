@@ -1,0 +1,967 @@
+import ArticleToc from "../components/TableOfContents/ArticleToc";
+import Revisit from "../components/Revisit";
+
+The [1 Billion Row Challenge](https://1brc.dev/#%F0%9F%92%AA-the-challenge) is a
+test of pure processing throughput, measuring how fast you can read 1 billion
+rows from a text file and compute the min, max, and mean for each of up to
+10,000 weather stations. The problem is very open-ended and leaves plenty of
+room for optimization along the way. I first caught wind of this challenge about
+2 years ago, but I wanted to wait until I was better equipped to take it on.
+Submissions have since closed, so I tested this against my own hardware: an
+Intel Core i5-10400 processor (6 cores, 12 threads, 2.9 GHz, 4.3GHz boost
+frequency), 16 GB of dual-channel DDR4 DRAM, rated for 3200 MHz, but limited to
+2666 MHz since that's the speed officially supported by the processor. The
+official entries were evaluated on a Hetzner AX161, a 32-core machine with 128
+GB of RAM. That machine holds the entire input (14.29 GiB, or 15.34 GB) in page
+cache several times over, whereas mine has less _regularly available_ RAM than
+the file has bytes. Since I'm bottlenecked by I/O on this setup, I did most of
+my testing and profiling against a smaller file of 270 million rows, roughly a
+quarter of the full input. Below is the problem statement in case you aren't
+familiar.
+
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
+  <div className="mx-2">
+    <strong>Problem Statement:</strong> You are given a text file with $$n$$
+    temperature measurements from $$m$$ different weather stations. You need
+    to calculate the min, max, and mean temperature at each weather station.
+    The program should write its results to an output file, alphabetically
+    ordered by station.
+    The problem has the following constraints, which I fudged a little for a
+    cleaner implementation:
+
+    <div className="mt-2"/>
+
+    - $$n = 1,000,000,000$$
+    - $$ 5,000 \le m \le 10,000$$
+    - the name of each station will fit within 15 bytes and only contain ASCII
+    characters
+    - each temperature measurement is a value within $$[-99.9, 99.9]$$ formatted
+    to the tenths place.
+    - the station name and temperature measurement will be separated by a ';'.
+
+  </div>
+</aside>
+
+<ArticleToc
+  sections={[
+    { title: "Preface", anchor: "#preface" },
+    { title: "Naive Approach", anchor: "#naive-approach" },
+    {
+      title: "Optimization 1: Poor Man's Map",
+      anchor: "#optimization-1-poor-mans-map",
+    },
+    {
+      title: "Optimization 2: SIMD / SWAR",
+      anchor: "#optimization-2-simd--swar",
+    },
+    {
+      title: "Optimization 3: Thread Count",
+      anchor: "#optimization-3-thread-count",
+    },
+    {
+      title: "Small Nits",
+      anchor: "#small-nits",
+      children: [
+        { title: "What Didn't Work", anchor: "#what-didnt-work" },
+        { title: "What Worked", anchor: "#what-worked" },
+      ],
+    },
+    { title: "Final Results", anchor: "#final-results" },
+  ]}
+/>
+
+## Preface
+
+One thing that I failed to consider before beginning this project is how big of
+a role the page cache would play. In retrospect, it makes complete sense —those
+pages that are fetched from disk are stored in RAM to prevent future accesses
+from hitting disk. The biggest concept that I initially didn't understand was
+that the page cache scales dynamically and can grow to fill almost all of the
+physical RAM that isn't used by other processes. However, one look at the
+available memory that I actually had using `free` revealed that I had much less
+memory to work with than I initially anticipated: 15 GiB total, with only 14 GiB
+of that actually being available on an idle machine, against an input file of
+14.29 GiB (15.34 GB). There's no possible way for the entire file to be present
+in the page cache, even without other processes running. During my initial
+tests, as RAM filled up, any pages fetched from disk had to evict other clean
+pages, even those that were read ahead by the kernel and had yet to be accessed,
+requiring another major fault (trip to disk) when those pages are needed.
+
+<div className="h-5" />
+
+I did consider walking behind the scan with `madvise(MADV_DONTNEED)` to release
+what I had already read, but that only tears down my own page table entries and
+leaves the page cache pages resident.
+
+<div className="h-5" />
+
+Due to this, I decided to use a file with 270 million rows instead (3.86 GiB).
+Still a lot of data to parse, but small enough to stay resident in the page
+cache. This means that a warm run takes zero major faults and the challenge
+becomes a sheer measure of parse speed.
+
+<div className="h-5" />
+
+## Naive Approach
+
+My initial "naive" approach was deliberately unsophisticated. It followed a
+blueprint that remained _mostly_ constant throughout my revisions — what changed
+over time was how each step was carried out, not the steps themselves.
+
+<div className="h-5" />
+
+This iteration was multithreaded, splitting the file into one roughly equal
+range of bytes per thread while ensuring that no row straddled a chunk. One
+approach that I considered but never attempted was handing out work dynamically
+to the threads. I believed that the coordination overhead would be too great
+and, in theory, each thread should finish around the same time anyway. Below is
+a brief outline of how each thread operated in this inital implementation.
+Consider how each of the underlined phrases might be changed / improved upon in
+future iterations:
+
+<div className="h-5" />
+
+1. The thread <Revisit>processes one line at a time</Revisit>, finding the
+   delimiter with <Revisit>
+   [`std::ranges::find`](https://en.cppreference.com/cpp/algorithm/ranges/find)
+   and
+   [`std::unreachable_sentinel`](https://en.cppreference.com/cpp/iterator/unreachable_sentinel_t)
+   </Revisit>, since the semicolon is guaranteed to appear on each line.
+2. Parse the station and the temperature, storing the temperature as a 16-bit
+   integer, that value being $$\text{temperature reading} \times 10$$. Add each
+   reading to <Revisit>a single, global `std::map`</Revisit> guarded by
+   <Revisit>a global mutex</Revisit>, since every thread writes into the same
+   table.
+3. Track the running <Revisit>min and max with `std::min` / `std::max`</Revisit>
+   alongside the sum and count for each station.
+4. Once every thread joins, walk the table in sorted order and write each
+   station's results to the output file.
+
+<div className="h-5" />
+
+On the smaller file, this took just under three minutes which isn't great. The
+wall clock isn't necessarily the most interesting metric, however: the program
+boasted a measly 0.53 instructions per cycle when we should be shooting for 2 or
+more at least. `perf` revealed that my implementation spent more than 6x as long
+inside the kernel (system time) as it did running its own code (user time). With
+the file already warm in page cache, almost none of that system time is I/O, it
+is the futex waiting. Every thread that loses the lock parks itself in a futex
+wait, and every handoff back costs a trip through the scheduler. 270 million map
+updates behind one lock means 270 million opportunities for a thread to block,
+and the twelve threads I have available on my machine spent most of their time
+doing exactly that, as seen by the 174 million context switches, at an effective
+clock of 1.94 GHz. Nothing about the parse loop mattered yet.
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 179.63 \pm 1.18 \\
+\text{Context switches} & 173{,}898{,}628 \\
+\text{Page faults} & 63{,}509 \\
+\text{Instructions per cycle} & 0.53 \\
+\text{Effective clock (GHz)} & 1.94 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 1: Naive implementation, 270 million rows}
+$$
+
+## **Optimization 1**: Poor Man's Map
+
+I think that the most glaring issue with the naive approach is the use of a
+single source of state, protected by a mutex that twelve threads fight over. A
+much better approach comes from noticing that none of that state needs to be
+shared while the file is being read. The min and max computations are
+associative in nature, and the mean across all readings for a station can be
+extrapolated from the sum of its temperatures and the total number of readings,
+both of which are associative too. This means that every thread can keep its own
+table, keyed by station name, accumulating those four values as it processes its
+own chunk of the file. The twelve tables can be merged once the last thread has
+joined, removing the need for any synchronization between threads while the file
+is being read.
+
+<div className="h-5" />
+
+The tradeoff with this approach is that we are trading memory for speed, since
+the table now exists twelve times over. My first iteration reached for the
+obvious container for this, `std::map`:
+
+<div className="h-5" />
+
+```cpp
+struct Stats {
+  int16_t min, max;
+  uint32_t count;
+  int64_t sum;
+};
+
+std::map<std::string, Stats> table;
+```
+
+<div className="h-5" />
+
+`std::map` is the most natural choice for a container here, sorting the keys by
+default, which is required for the final output. Merging the tables at the end
+is cheap as well, since each thread's table holds at most 10,000 entries, so
+folding all twelve into one costs at most 120,000 updates. The catch is that
+each of the 270 million upserts completed while reading the file has to locate
+its key by descending the tree, and the tree is only shaped that way to give me
+an ordering I need exactly once, after the merge, to write 10,000 lines.
+
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
+  **Aside: SSO**
+
+<div className="mt-2" />
+
+Limiting the station names to at most 15 bytes allows for the keys of the map to
+be stored directly inside the string object via short string optimization (SSO),
+bypassing a separate heap allocation for the characters themselves. The bytes of
+the string now live in the node we've already loaded, so a key comparison never
+has to chase a pointer and wait on another cache line.
+
+</aside>
+
+<div className="h-5" />
+
+Inspired by [this talk](https://www.youtube.com/watch?v=h8TBLKyo7Rs), we can do
+some napkin math to approximate how much space we'll actually use with this
+approach:
+
+- Each node is 32 bytes, 24 bytes for left, right, and parent pointers, 4 bytes
+  for a red/black color field (defined as an
+  [unscoped enum](https://stackoverflow.com/questions/8115550/what-is-the-size-of-an-enum-type-data-in-c)),
+  and 4 bytes of padding.
+- The string key is another 32 bytes per node.
+- The struct used to keep track of the stats for each station is 16 bytes, as
+  seen in the above sample.
+
+  <div className="mt-2" />
+
+  Note that the sum of the temperature readings needs to be 64-bits in the worst
+  case where every reading is 99.9 at the same station. All 270 million rows
+  landing on one station sums to approximately $$2.7 \times 10^{11}$$, which is
+  greater than the maximum value of a `uint32_t`, $$4.3 \times 10^9$$.
+
+<div className="h-5" />
+
+One thing to note is that every node creation calls its own `operator new`, and
+[glibc's allocator](https://stackoverflow.com/questions/62095835/glibc-malloc-implementation-bookkeeping)
+prepends an 8-byte header and rounds the result up to a 16-byte boundary, so an
+80-byte request occupies a 96-byte chunk. So, this means that, across all
+threads, the maps allocate
+
+<div className="h-5" />
+
+$$
+96 \times 10,000 \times 12 \approx 11 \text{ MiB}
+$$
+
+<div className="h-5" />
+
+Eleven megabytes against 16 GB of RAM sounds like a small price to pay, however,
+it is important to note that my machine only has 12 MiB of L3 cache that is
+shared across all six cores. The twelve maps fill 92% of L3 without counting a
+single byte of the input. Moving one level up and considering the L2 cache, it's
+worse still: two threads share a core's 256 KiB L2 between two ~940 KiB trees,
+so in practice every lookup misses L2.
+
+<div className="h-5" />
+
+If the requested value for a lookup is not in cache, odds are there will be more
+than one cache miss as we descend the map. A red-black tree with 10,000 nodes
+is, in the worst case, $$2 \times \lg (10000 + 1) \approx 26$$ levels deep, so
+an access could pointer-chase all 26 nodes the allocator placed wherever it
+pleased into cache. This isn't to mention the string comparisons at every level
+that only make the operation costlier. 26 trips to L3 on each of 270 million
+upserts is unacceptable.
+
+<div className="h-5" />
+
+The obvious response is to swap in `std::unordered_map` and stop paying for
+ordering we don't need. However, I found that it barely helped, and I believe
+this is mostly due to the fact that it is still a node-based container that uses
+buckets to handle hash collisions. Determining the bucket index of an item
+[relies on the division operation when the number of buckets isn't a power of two](https://en.cppreference.com/cpp/container/unordered_map).
+
+<div className="h-5" />
+
+Instead of pursuing a node-based structure for our key-value store, we can write
+a much simpler table that lies contiguously in memory and avoids unnecessary
+overhead guaranteed by the standard: a fixed-size array of slots, indexed by a
+hash of the station name.
+
+<div className="h-5" />
+
+```cpp
+struct alignas(32) Slot {
+  char name[16]; // 15 bytes + null terminator
+  int16_t min, max;
+  uint32_t count;
+  int64_t sum;
+};
+
+// one per thread, 32K slots for at most 10,000 stations
+std::vector<Slot> table(1u << 15);
+```
+
+<div className="h-5" />
+
+By reserving space for the vector upfront, we bypass the need to request extra
+memory on every insert. A power-of-two capacity allows us to map a hash to a
+slot using the bitwise and operation instead of division via
+`hash & (capacity - 1)`.
+
+<div className="h-5" />
+
+With 10,000 stations in 32,768 slots, our load factor is
+$$\alpha \approx 0.31$$. Using standard linear probing, finding a key that is
+already present takes approximately
+$$\frac{1}{2}(1 + \frac{1}{1 - \alpha}) \approx 1.22$$ probes. Those extra
+probes are nearly free, though, since every slot is 32 bytes and aligned, so two
+slots share a cache line and spatial locality means the next slot is usually
+already present.
+
+<div className="h-5" />
+
+Continuing on the idea of napkin math, we see how the two structures compare per
+station entry:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|r|}
+\hline
+ & \textbf{std::map} & \textbf{poor man's map} \\
+\hline
+\text{Bytes per station} & 96 & 32 \\
+\text{Footprint per thread} & 937 \text{ KiB} & 1 \text{ MiB} \\
+\text{Footprint, twelve threads} & 11 \text{ MiB} & 12 \text{ MiB} \\
+\text{Share of L3} & 92\% & 100\% \\
+\text{Loads per lookup} & 26 \text{ worst case} & \sim 1.2 \text{ expected} \\
+\text{Key comparisons per lookup} & 26 & \sim 1.2 \\
+\text{Allocations per thread} & 10{,}000 & 1 \\
+\hline
+\end{array}
+$$
+
+<div className="h-5" />
+
+Note that the poor man's map actually reserves more memory than the trees, since
+over two-thirds of its slots sit empty. But, this means that a lookup only ever
+touches, in the average case, the one or two slots its hash points to.
+
+<div className="h-5" />
+
+Now, with this new map, what was 26 dependent loads in the worst case collapse
+into one or two, and the address of that load is known the moment the hash
+lands, so the core can keep several rows' lookups in flight instead of stalling
+on each one in turn.
+
+<div className="h-5" />
+
+Running this against the same 270 million row input:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 2.4233 \pm 0.0157 \\
+\text{Context switches} & 1{,}859 \\
+\text{Page faults} & 65{,}149 \\
+\text{Instructions per cycle} & 0.66 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 2: Poor man's map + thread-local state, 270 million rows}
+$$
+
+<div className="h-5" />
+
+One detail that I glanced over was the hash function that I opted to use: a
+[64-bit fnv1a hash](https://www.isthe.com/chongo/tech/comp/fnv/), which XORs
+each character of the station name into a 64-bit accumulator and multiplies by a
+prime. My initial implementation resembled the following code snippet:
+
+<div className="h-5" />
+
+```cpp
+static constexpr uint64_t hash(std::string_view sv) {
+  uint64_t h = 14695981039346656037ull;
+  for (unsigned char c : sv) {
+    h ^= c;
+    h *= 1099511628211ull;
+  }
+  h ^= h >> 32; // avalanche
+
+  return h;
+}
+```
+
+<div className="h-5" />
+
+Note that the above constants are the "fnv1a" prime and offset basis, which
+abide by some constraints that I do not understand myself. Also, it is worth
+noting that the avalanche step at the end mixes the high bits down into the low
+ones I index with. The important thing to note from this snippet is that we must
+process each character in the station name serially, since each calculation
+depends on the value from the previous. To bypass this, we can use the fact that
+station names are $$\le 15$$ bytes, allowing us to store the ASCII values of the
+characters in two 64-bit integers. Now, the number of operations needed to
+compute a hash stops growing with the size of the key: a three character station
+name now costs the same to hash as a fifteen character one. I also opted to use
+a
+[fmix64 hash](https://encode.su/threads/1747-Extremely-fast-hash#post_message_34156),
+based off of murmurhash, to compute the hash in three multiplications and three
+shifts:
+
+<div className="h-5" />
+
+```cpp
+static constexpr uint64_t hash(uint64_t s0, uint64_t s1) {
+  uint64_t h = s0 ^ (s1 * 1099511628211ull);
+  h ^= h >> 33;
+  h *= 0xff51afd7ed558ccdull;
+  h ^= h >> 33;
+  h *= 0xc4ceb9fe1a85ec53ull;
+  h ^= h >> 33;
+  return h;
+}
+```
+
+<div className="h-5" />
+
+Both integers are loaded straight out of the mapped file with a pair of 8-byte
+`memcpy` calls, then masked down to just the station name. We read all 16 bytes
+regardless of how long the name is, but we can mask any bytes that run past the
+name if we know the position of the delimiter that follows it (more on
+optimizing this later). Reading only as many bytes as the name actually occupies
+would mean either branching on the length or handing `memcpy` a runtime size,
+which it can no longer fold into a pair of loads (for more on this, read
+[here](https://www.learncpp.com/cpp-tutorial/the-as-if-rule-and-compile-time-optimization/)).
+Reading the maximum costs two `and` instructions instead, and since every name
+is followed by a delimiter and a reading, the bytes we overshoot into are still
+part of the same line. Note that the 9 possible bytemasks can be computed at
+compile time, one for each number of bytes (0 through 8) the name can occupy in
+either integer.
+
+<div className="h-5" />
+
+Putting the fixed-size keys, the compile-time masks, and the new hash function
+together, we get another great performance improvement over the previous
+iteration:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.92015 \pm 0.00173 \\
+\text{Context switches} & 79 \\
+\text{Page faults} & 66{,}721 \\
+\text{Instructions per cycle} & 0.88 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 3: Fixed-size keys and hashing, 270 million rows}
+$$
+
+<div className="h-5" />
+
+The instruction count fell from 65 billion to 36 billion and instructions per
+cycle rose from 0.66 to 0.88, so we're doing less work and stalling less often
+while we do it.
+
+<div className="h-5" />
+
+## **Optimization 2**: SIMD / SWAR
+
+Going back to the naive approach, each thread found the delimiters on a line
+with `std::ranges::find`, which walks the line one byte at a time, comparing
+each character against the delimiter and branching on the result. Branch
+mispredicts can cost us a lot of clock cycles, so it is in our best interest to
+remove them when possible. One look at `perf report` revealed that nearly 20% of
+the program's clock cycles were spent within these searches, so it made sense to
+turn to an alternative: SIMD. Most CPU cores come with a set of wide registers
+that allow a single instruction to operate on several values at once, and the
+i5-10400 on my workbench has sixteen 256-bit registers that support AVX2
+instructions. Since a station name is at most 15 bytes, the name and the
+semicolon that follows it always fit within the 32 bytes that one of these
+registers holds. So, instead of checking one character at a time, we can load 32
+bytes of the line into a register, compare every byte against a semicolon in a
+single instruction, and reduce the result to a 32-bit mask whose lowest set bit
+marks the position of the delimiter. The same trick finds the newline, and
+neither search loops nor branches per character. In the best case, a single load
+could find the delimiters of $$\lfloor \tfrac{32}{6} \rfloor = 5$$ readings at a
+time (more on this later).
+
+<div className="h-5" />
+
+A SIMD load from L1 usually takes between 5 and 7 cycles on AVX2, which is a
+small price to pay for the boost in processing throughput.
+
+<aside className="mt-6 rounded-md border-l-4 border-amber-400 dark:border-yellow-500/70 bg-amber-50 dark:bg-yellow-900/30 p-4">
+  <div className="mx-2" />
+
+**Aside: Speculative Read-ahead**
+
+  <div className="mt-2">
+
+It is important to discern the OS's behavior when it comes to loading the mapped
+file into memory. As it turns out, there is functionality for
+[prefetching pages of the mapped file](https://stackoverflow.com/questions/19653618/mmap-will-the-mapped-file-be-loaded-into-memory-immediately).
+Linux provides a configurable variable named `read_ahead_kb` that denotes how
+many kilobytes of a file the kernel can fetch into the page cache in advance.
+This value is 128 by default, or 32 pages. Normally, this allows for reading on
+both sides of the faulting address. However, by alerting the kernel that we will
+access these pages sequentially via the system call
+[`madvise(MADV_SEQUENTIAL)`](https://man7.org/linux/man-pages/man2/madvise.2.html),
+it instead reads ahead only in the direction we're scanning. Note that this only
+matters on a cold run, since a warm run finds every page already in the page
+cache.
+
+  </div>
+</aside>
+
+<div className="h-5" />
+
+Running the AVX2 search against the same input:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.82234 \pm 0.00042 \\
+\text{Context switches} & 101 \\
+\text{Page faults} & 66{,}721 \\
+\text{Instructions per cycle} & 0.64 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 4: AVX2 delimiter search, 270 million rows}
+$$
+
+<div className="h-5" />
+
+Note that instructions per cycle actually fell from 0.88 to 0.64, which looks
+like undesired at first glance. However, the instruction count fell from 36
+billion to 23 billion, so we're doing far less work overall. Branch mispredicts
+fell from 710 million to 196 million too, even though a larger percentage of
+branches now mispredict, since the total number of branches dropped from 11.6
+billion to 1.7 billion. This solved part of the branch mispredict issue, but we
+are still mispredicting $$\sim 11.33 \%$$ of all branches.
+
+<div className="h-5" />
+
+The remaining branch mispredicts are still the glaring issue, even after
+improving our delimiter search. I had reason to believe, from more digging
+through `perf report`, that most of them came from parsing the temperature,
+which checks for a minus sign and for whether the reading has one or two digits
+before the decimal point. Since the temperature readings in the input are
+generated at random, I originally figured neither check could be predicted
+reliably. The fix I found
+[here](https://github.com/merykitty/1brc/blob/1a4ac0d2496e9329534370eaf01b28e77658b073/src/main/java/dev/morling/onebrc/CalculateAverage_merykitty.java),
+from another programmer attempting the same challenge, used SWAR (SIMD within a
+register), which applies the same idea as SIMD to an ordinary 64-bit
+general-purpose register. A reading is at most 6 bytes long (`-99.9` and the
+newline), so the entire reading fits into a single 8-byte load and its value can
+be pulled out with some bit manipulation and a single multiplication, without
+branching on the sign or the number of digits. I still don't understand fully
+how this works; it is quite the feat. Credit to
+[merykitty](https://github.com/merykitty), who pioneered the method.
+
+<div className="h-5" />
+
+The catch with this approach that doesn't pair well with the previous
+optimization is that SWAR lives in a general-purpose register, not the vector
+registers that we just used to find the delimiters. Parsing a number depends on
+where each of its digits sits, and each reading starts at a different offset
+within the register, so AVX2 provides no easy way to line them up in lanes and
+parse several at once. To solve this, we have the SIMD search only return the
+position of the semicolon, and the 8 bytes after it are loaded again into a
+general-purpose register to be parsed one reading at a time (if there is a
+clever way to work around this double load, please let me know). SWAR also finds
+the end of the line on its own, since the newline always sits two bytes after
+the decimal point, which makes the SIMD search for the newline redundant.
+
+<div className="h-5" />
+
+My implementation of the SWAR temperature parse can be found
+[here](https://github.com/artiehumphreys/1brc/blob/main/include/utils.hpp#L79).
+Running this new temperature parse against the same input:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.85505 \pm 0.00219 \\
+\text{Context switches} & 105 \\
+\text{Page faults} & 66{,}721 \\
+\text{Instructions per cycle} & 0.63 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 5: SWAR temperature parsing, 270 million rows}
+$$
+
+<div className="h-5" />
+
+Surprisingly, this change caused the program to run slower with the average wall
+clock rising from 0.822 seconds to 0.855 seconds, even though branch mispredicts
+fell from 196 million to 166 million. As it turns out, after digging through the
+disassembly, there was a different root to the branch misprediction issue than I
+originally expected: a single `std::min` call used to split the station name
+across the two 8-byte integers had compiled to a branch. Since station names
+vary randomly in length, that branch was responsible for the vast majority of
+the remaining mispredicts. Here's how I originally stored the value of the
+station name:
+
+<div className="h-5" />
+
+```cpp
+// RECALL: store the name in two 8-byte integers (name <= 15 bytes)
+std::memcpy(&s0, begin, sizeof(uint64_t));
+std::memcpy(&s1, begin + sizeof(uint64_t), sizeof(uint64_t));
+
+// "branchless" store name (assumes little endian layout)
+const size_t sep = std::min(station_length, size_t{8}); // compiles to a branch
+s0 &= station_masks[sep];
+s1 &= station_masks[station_length - sep];
+```
+
+<div className="h-5" />
+
+This branch will likely be mispredicted on around half of the lines, assuming
+the length of the station is truly random between 1 and 15 characters. This will
+lead to around $$\frac{270}{2} = 135$$ million pipeline flushes, costing around
+20 cycles each (a rough estimate, which I check below). To get rid of this
+branch, I replaced the 9 single masks with a lookup table of mask pairs, one for
+each possible name length. The previous version had to compare the length
+against the size of the integers where the names were stored (8 bytes) to decide
+how the name splits across the two integers before it could look up either mask.
+The new table bakes that split into every entry, so a single lookup by the full
+length returns both masks and nothing compares against the length at all. Note
+that the table in both versions is marked as `constexpr` and is evaluated at
+compile time:
+
+<div className="h-5" />
+
+```cpp
+// one {low, high} mask pair per possible name length, built at compile time
+// ex: station_masks[12] = {low_bytes: 255, high_bytes: 240}
+const StationNameMask station_name_mask = station_masks[station_length];
+s0 &= station_name_mask.low_bytes;
+s1 &= station_name_mask.high_bytes;
+```
+
+<div className="h-5" />
+
+Running this against the same input:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.79553 \pm 0.00049 \\
+\text{Context switches} & 84 \\
+\text{Page faults} & 66{,}722 \\
+\text{Instructions per cycle} & 0.63 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 6: Branchless station name masking, 270 million rows}
+$$
+
+<div className="h-5" />
+
+Branch mispredicts fell from 166 million to 32 million, which confirms that the
+`std::min` was responsible for most of them, and only 2.77% of branches now
+mispredict. The wall clock also fell to 0.796 seconds, beating the 0.822 seconds
+from Table 4. Cycles fell by 2.5 billion as well, which puts each removed
+mispredict at no more than about 18 cycles, in line with the estimate above.
+
+<div className="h-5" />
+
+As for why the SWAR parse made the program slower with fewer mispredicts, I
+believe it comes down to a control dependency versus a data dependency. A branch
+can be speculated past, in which case the digit check guesses correctly and
+incurs no cost. The digit check also would have been guessed correctly about 90%
+of the time, given 190 out of the 1990 possible temperature measurements have a
+single-digit integer part. On the other hand, a branchless computation can't be
+speculated past, so we never encounter a zero-cost digit check.
+
+## **Optimization 3**: Thread Count
+
+Up until now, every run has used twelve threads, exactly what
+`std::thread::hardware_concurrency()` reports. I thought that this would
+maximize performance, falling for the "more threads implies greater throughput"
+fallacy. However, the i5-10400 only has six physical cores, and hyperthreading
+runs two threads on each one, with those two threads sharing execution units and
+its L1 and L2 caches. What I failed to realize is how this would affect
+performance, especially with threads fighting for cache space. To evaluate the
+effect the number of threads had on the throughput of my program, I ran it with
+all possible thread counts and compared the average runtimes across five warm
+runs.
+
+<div className="h-5" />
+
+Sweeping from one to twelve threads:
+
+<div className="flex justify-center mt-6">
+  <img
+    src="/1brc_threads_elapsed.png"
+    alt="Wall clock against thread count, lowest at six threads"
+    width="70%"
+  />
+</div>
+<figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
+  Wall clock vs. thread count, 270 million rows
+</figcaption>
+
+The wall clock falls steadily up to six threads, bottoming out at 0.740 seconds,
+then jumping to 0.954 seconds at seven and not recovering the gains we got from
+six threads. Past six threads, each additional thread doubles up on a core,
+competing for its caches as well. Every thread keeps its own 1 MiB table. Six
+tables take up half of the 12 MiB L3, but twelve fill it entirely before a
+single byte of input is read. Sure enough, the LLC (last level cache) load
+misses stay flat at around 4.4 million up to six threads, then climb with every
+thread after that, reaching over 32 million at twelve:
+
+<div className="flex justify-center mt-6">
+  <img
+    src="/1brc_threads_llc.png"
+    alt="LLC load misses against thread count, flat until six threads then rising"
+    width="70%"
+  />
+</div>
+<figcaption className="prose mx-auto mt-3 text-center text-sm text-gray-600 mb-6">
+  LLC load misses vs. thread count, 270 million rows
+</figcaption>
+
+Setting the thread count to six, a one-line change, brought the wall clock from
+0.796 seconds to 0.739 seconds, a 7.1% improvement. Instructions per cycle also
+jumped from 0.63 to 1.32.
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.73902 \pm 0.00353 \\
+\text{Context switches} & 22 \\
+\text{Page faults} & 65{,}155 \\
+\text{Instructions per cycle} & 1.32 \\
+\text{Effective clock (GHz)} & 3.98 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 7: Six threads, 270 million rows}
+$$
+
+<div className="h-5" />
+
+## Small Nits
+
+I was pretty satisfied with the results up to this point; I had brought the
+runtime to under a second on a fairly dated, budget processor. However, I knew
+there was still some performance on the table. Finding what worked required lots
+of trial and error; below is a list of the small nits that won and lost me time.
+All of these were built and tested on top of my six-thread program, and I'll
+start with the ones that didn't work out. Assume that any mention of a map or a
+table refers to the Poor Man's Map I implemented per Optimization 1.
+
+### What Didn't Work
+
+1. **Decreasing Table Size**: Halving the size of the table to 16,384 slots
+   (from 32,768 slots) shrank each thread's table to 512 KiB, which nearly
+   halved LLC load misses from 4.32 million to 2.27 million in my testing.
+   However, the load factor doubled to $$\alpha \approx 0.61$$, so a lookup took
+   about 1.78 probes instead of 1.22. This was reflected in the number of branch
+   mispredicts, which skyrocketed from 32 million to 82 million. This change
+   increased my average wall clock time by 8.7%.
+
+   <div className="h-5" />
+
+2. **Buffering Writes (Instead of Batching)**: Upon completion of processing a
+   chunk of the input file, each thread returns a map. The batching described
+   below writes 32 lines back to the table at once, so only one iteration incurs
+   the cost of the writes. I tried spreading that out with a ring buffer that
+   writes back one line per iteration, amortizing, in theory, the work done by
+   the batched write. However, this change added 3.9 billion instructions, and
+   even with instructions per cycle rising from 2.15 to 2.40, it ran slower.
+
+   <div className="h-5" />
+
+3. **Disabling Source Fortification**: It turns out that glibc provides
+   protection against buffer overflows via a feature called
+   [source fortification](https://www.sourceware.org/glibc/manual/2.44/html_node/Source-Fortification.html),
+   which some GCC builds enable by default. Since I load each station name as
+   raw bytes from the mapped file with two `memcpy` calls, I assumed each one
+   carried a runtime bounds check, as `memcpy` is one of the functions it
+   hardens. However, building with `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0`
+   didn't reduce the instruction count. Each copy is a constant 8 bytes into an
+   8-byte integer, so the compiler had already proven the bounds checks
+   unnecessary. A 0.7% difference is the same as what I got from rebuilding
+   identical code, so this one is noise.
+
+### What Worked
+
+1. **Scanning 64 Bytes at a Time**: Instead of loading 32 bytes at the start of
+   every line, I decided to load 64 bytes into two registers and find the
+   delimiters via a 64-bit mask of every semicolon and newline.
+   `std::countr_zero` gives the position of the next delimiter and `x &= x - 1`
+   clears it, so one window covers every complete line inside it, up to 10
+   readings compared to one per load before. One thing that I didn't even
+   consider until I looked into
+   [simdjson](https://github.com/simdjson/simdjson/blob/master/include/simdjson/padded_string-inl.h#L397)
+   was the fact that this approach could technically read past the end of the
+   file I mapped at the beginning of the program. The fix I borrowed from
+   simdjson is to first map an anonymous region 64 bytes larger than the file,
+   then map the file over the front of it. This ensures that the final window
+   reads zeros instead of unmapped memory if it reads past the mapped boundary
+   with a 64-byte access. This change by itself does not have a big impact on
+   performance, but I think it is still worth touching on. These changes brought
+   the wall clock down 6.6% on average. I believe this is because a line no
+   longer had to wait on the previous line's newline position before it could
+   load. Every delimiter in a window is known after the same two loads, so the
+   work for the roughly four lines in each window could overlap.
+
+   <div className="h-5" />
+
+2. **Prefetching and Batching Map Operations**: When I profiled the program back
+   in Optimization 1, about 30% of its cycles landed on a single load: reading a
+   slot's key out of the table. So, instead of updating the table as soon as a
+   line is parsed, I hash the name, prefetch its slot with `__builtin_prefetch`,
+   and park the line in a batch of up to 32. Once the batch is nearly full, I
+   write it back, by which point its slots should already be in L1. This was by
+   far the biggest win of the bunch, decreasing average runtime by 10.6%, with
+   instructions per cycle rising from 1.61 to 2.15 even as the instruction count
+   went up.
+
+   <div className="h-5" />
+
+3. **Branchy Min / Max**: A station's running min and max rarely change, since
+   the number of new min / max values that will overwrite the previous min / max
+   grows logarithmically with the number of readings. Logically, this makes
+   sense: a new reading only replaces the min if it is lower than every reading
+   before it, and that bar gets harder to clear the more readings we've seen.
+   Because the readings are random, each of the first $$k$$ readings is equally
+   likely to be the lowest, so the $$k$$-th reading is a new minimum with
+   probability $$\frac{1}{k}$$. Over $$n$$ readings, we expect about
+   $$1 + \frac{1}{2} + \cdots + \frac{1}{n} \approx \ln n$$ new minimums and
+   likewise for the max. That sum only grows by about $$\ln 2 \approx 0.69$$
+   each time $$n$$ doubles. Each thread sees about 4,500 readings per station,
+   so its min and max are each expected to change fewer than 10 times.
+   `std::min` / `std::max` compiled to
+   [`cmov`s](https://yarchive.net/comp/linux/cmov.html), which are paid on every
+   reading. The solution is to replace these calls with plain `if` statements.
+   The real win here was marking both branches `[[unlikely]]`, which moved the
+   stores to the end of the function, so the common case falls straight through,
+   bringing the wall clock down 3.2%.
+
+   <div className="h-5" />
+
+4. **Multiply-Shift Hash**: The fmix64 hash from Optimization 1 chains three
+   multiplications, each of which has to wait on the result of the one before
+   it. I replaced it with just two multiplications, one for each half of the
+   station name, each by one of
+   [xxHash's](https://github.com/Cyan4973/xxHash/blob/dev/xxhash.h) primes.
+   Neither depends on the other, so both can run at the same time. I then XOR
+   the two products together and keep the top 15 bits as the slot index, since
+   the high bits of a product are the best mixed. This reduced the instruction
+   count by 2 billion and brought the wall clock down 5.2% on average.
+
+   <div className="h-5" />
+
+5. **Packing Count and Sum**: Instead of storing the count and sum separately,
+   the two can be packed into a single 64-bit integer, reserving 24 bits for the
+   count and 40 for the sum. This allows each reading to update both values with
+   a single RMW (read-modify-write) instead of two. This saved 1.1%, but the
+   catch is that a 24-bit count overflows past 16.7 million readings for a
+   single station. Luckily, this is far more than the roughly 27,000 each
+   station sees here, though the problem statement technically allows it. Since
+   each reading adds at most 999 tenths to the sum (I store the readings in
+   tenths to avoid floating point numbers), a 24-bit count also keeps the sum
+   below $$999 \times 2^{24} < 2^{34}$$, so the sum only needs 35 bits, sign
+   included. This means the split can be modified to suit how many readings each
+   station will likely see: 26 bits for the count and 38 for the sum, for
+   example, raises the limit to about 67 million.
+
+   <div className="h-5" />
+
+6. **Exiting Early**: The final improvement I found is a cool one. My program
+   originally called `munmap` on the 3.86 GiB input file and closed the file
+   before returning from `main`, which also runs every destructor. Calling
+   [`std::_Exit`](https://en.cppreference.com/cpp/utility/program/_Exit) skips
+   the `munmap` and all of the stack unwinding for local and static variables,
+   although the kernel still has to tear down the mapping when the process
+   exits. In my testing, the `munmap` took about 50 ms while the kernel's own
+   teardown took about 45 ms, and that difference makes up most of the 1.3%
+   improvement I saw in the average wall clock.
+
+## Final Results
+
+In the end, the final throughput numbers are as follows:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.54433 \pm 0.00094 \\
+\text{Context switches} & 18 \\
+\text{Page faults} & 65{,}151 \\
+\text{Instructions per cycle} & 2.15 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 8: Final program, 270 million rows}
+$$
+
+<div className="h-5" />
+
+I am proud of how this project went. My code can be found on
+[my GitHub](https://github.com/artiehumphreys/1brc/tree/main).
