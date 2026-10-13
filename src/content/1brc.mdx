@@ -66,6 +66,7 @@ familiar.
         { title: "What Worked", anchor: "#what-worked" },
       ],
     },
+    { title: "Final Results", anchor: "#final-results" },
   ]}
 />
 
@@ -816,6 +817,9 @@ table refers to the Poor Man's Map I implemented per Optimization 1.
    about 1.78 probes instead of 1.22. This was reflected in the number of branch
    mispredicts, which skyrocketed from 32 million to 82 million. This change
    increased my average wall clock time by 8.7%.
+
+   <div className="h-5" />
+
 2. **Buffering Writes (Instead of Batching)**: Upon completion of processing a
    chunk of the input file, each thread returns a map. The batching described
    below writes 32 lines back to the table at once, so only one iteration incurs
@@ -823,6 +827,9 @@ table refers to the Poor Man's Map I implemented per Optimization 1.
    writes back one line per iteration, amortizing, in theory, the work done by
    the batched write. However, this change added 3.9 billion instructions, and
    even with instructions per cycle rising from 2.15 to 2.40, it ran slower.
+
+   <div className="h-5" />
+
 3. **Disabling Source Fortification**: It turns out that glibc provides
    protection against buffer overflows via a feature called
    [source fortification](https://www.sourceware.org/glibc/manual/2.44/html_node/Source-Fortification.html),
@@ -836,3 +843,125 @@ table refers to the Poor Man's Map I implemented per Optimization 1.
    identical code, so this one is noise.
 
 ### What Worked
+
+1. **Scanning 64 Bytes at a Time**: Instead of loading 32 bytes at the start of
+   every line, I decided to load 64 bytes into two registers and find the
+   delimiters via a 64-bit mask of every semicolon and newline.
+   `std::countr_zero` gives the position of the next delimiter and `x &= x - 1`
+   clears it, so one window covers every complete line inside it, up to 10
+   readings compared to one per load before. One thing that I didn't even
+   consider until I looked into
+   [simdjson](https://github.com/simdjson/simdjson/blob/master/include/simdjson/padded_string-inl.h#L397)
+   was the fact that this approach could technically read past the end of the
+   file I mapped at the beginning of the program. The fix I borrowed from
+   simdjson is to first map an anonymous region 64 bytes larger than the file,
+   then map the file over the front of it. This ensures that the final window
+   reads zeros instead of unmapped memory if it reads past the mapped boundary
+   with a 64-byte access. This change by itself does not have a big impact on
+   performance, but I think it is still worth touching on. These changes brought
+   the wall clock down 6.6% on average. I believe this is because a line no
+   longer had to wait on the previous line's newline position before it could
+   load. Every delimiter in a window is known after the same two loads, so the
+   work for the roughly four lines in each window could overlap.
+
+   <div className="h-5" />
+
+2. **Prefetching and Batching Map Operations**: When I profiled the program back
+   in Optimization 1, about 30% of its cycles landed on a single load: reading a
+   slot's key out of the table. So, instead of updating the table as soon as a
+   line is parsed, I hash the name, prefetch its slot with `__builtin_prefetch`,
+   and park the line in a batch of up to 32. Once the batch is nearly full, I
+   write it back, by which point its slots should already be in L1. This was by
+   far the biggest win of the bunch, decreasing average runtime by 10.6%, with
+   instructions per cycle rising from 1.61 to 2.15 even as the instruction count
+   went up.
+
+   <div className="h-5" />
+
+3. **Branchy Min / Max**: A station's running min and max rarely change, since
+   the number of new min / max values that will overwrite the previous min / max
+   grows logarithmically with the number of readings. Logically, this makes
+   sense: a new reading only replaces the min if it is lower than every reading
+   before it, and that bar gets harder to clear the more readings we've seen.
+   Because the readings are random, each of the first $$k$$ readings is equally
+   likely to be the lowest, so the $$k$$-th reading is a new minimum with
+   probability $$\frac{1}{k}$$. Over $$n$$ readings, we expect about
+   $$1 + \frac{1}{2} + \cdots + \frac{1}{n} \approx \ln n$$ new minimums and
+   likewise for the max. That sum only grows by about $$\ln 2 \approx 0.69$$
+   each time $$n$$ doubles. Each thread sees about 4,500 readings per station,
+   so its min and max are each expected to change fewer than 10 times.
+   `std::min` / `std::max` compiled to
+   [`cmov`s](https://yarchive.net/comp/linux/cmov.html), which are paid on every
+   reading. The solution is to replace these calls with plain `if` statements.
+   The real win here was marking both branches `[[unlikely]]`, which moved the
+   stores to the end of the function, so the common case falls straight through,
+   bringing the wall clock down 3.2%.
+
+   <div className="h-5" />
+
+4. **Multiply-Shift Hash**: The fmix64 hash from Optimization 1 chains three
+   multiplications, each of which has to wait on the result of the one before
+   it. I replaced it with just two multiplications, one for each half of the
+   station name, each by one of
+   [xxHash's](https://github.com/Cyan4973/xxHash/blob/dev/xxhash.h) primes.
+   Neither depends on the other, so both can run at the same time. I then XOR
+   the two products together and keep the top 15 bits as the slot index, since
+   the high bits of a product are the best mixed. This reduced the instruction
+   count by 2 billion and brought the wall clock down 5.2% on average.
+
+   <div className="h-5" />
+
+5. **Packing Count and Sum**: Instead of storing the count and sum separately,
+   the two can be packed into a single 64-bit integer, reserving 24 bits for the
+   count and 40 for the sum. This allows each reading to update both values with
+   a single RMW (read-modify-write) instead of two. This saved 1.1%, but the
+   catch is that a 24-bit count overflows past 16.7 million readings for a
+   single station. Luckily, this is far more than the roughly 27,000 each
+   station sees here, though the problem statement technically allows it. Since
+   each reading adds at most 999 tenths to the sum (I store the readings in
+   tenths to avoid floating point numbers), a 24-bit count also keeps the sum
+   below $$999 \times 2^{24} < 2^{34}$$, so the sum only needs 35 bits, sign
+   included. This means the split can be modified to suit how many readings each
+   station will likely see: 26 bits for the count and 38 for the sum, for
+   example, raises the limit to about 67 million.
+
+   <div className="h-5" />
+
+6. **Exiting Early**: The final improvement I found is a cool one. My program
+   originally called `munmap` on the 3.86 GiB input file and closed the file
+   before returning from `main`, which also runs every destructor. Calling
+   [`std::_Exit`](https://en.cppreference.com/cpp/utility/program/_Exit) skips
+   the `munmap` and all of the stack unwinding for local and static variables,
+   although the kernel still has to tear down the mapping when the process
+   exits. In my testing, the `munmap` took about 50 ms while the kernel's own
+   teardown took about 45 ms, and that difference makes up most of the 1.3%
+   improvement I saw in the average wall clock.
+
+## Final Results
+
+In the end, the final throughput numbers are as follows:
+
+<div className="h-5" />
+
+$$
+\begin{array}{|l|r|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+\text{Wall clock (s)} & 0.54433 \pm 0.00094 \\
+\text{Context switches} & 18 \\
+\text{Page faults} & 65{,}151 \\
+\text{Instructions per cycle} & 2.15 \\
+\text{Effective clock (GHz)} & 3.97 \\
+\hline
+\end{array}
+$$
+
+$$
+\textit{Table 8: Final program, 270 million rows}
+$$
+
+<div className="h-5" />
+
+I am proud of how this project went. My code can be found on
+[my GitHub](https://github.com/artiehumphreys/1brc/tree/main).
