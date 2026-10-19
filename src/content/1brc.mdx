@@ -536,6 +536,12 @@ it instead reads ahead only in the direction we're scanning. Note that this only
 matters on a cold run, since a warm run finds every page already in the page
 cache.
 
+<div className="h-5" />
+
+I actually tried cold runs of the program with `read_ahead_kb` set to 128, 256,
+and 1024 kb without seeing much of a difference in performance. I couldn't find
+any information as to why due to the limited discussion of this setting online.
+
   </div>
 </aside>
 
