@@ -7,16 +7,16 @@ export const tocData: TocSection[] = [
     anchor: "/optimization.html",
     children: [
       {
-        title: "Particle Simulation",
-        anchor: "/optimization/particle-simulation.html",
+        title: "1 Billion Row Challenge",
+        anchor: "/optimization/1brc.html",
       },
       {
         title: "Lock-Free SPSC Queue",
         anchor: "/optimization/spsc-queue.html",
       },
       {
-        title: "1 Billion Row Challenge",
-        anchor: "/optimization/1brc.html",
+        title: "Particle Simulation",
+        anchor: "/optimization/particle-simulation.html",
       },
     ],
   },
@@ -24,6 +24,10 @@ export const tocData: TocSection[] = [
     title: "Designing Algorithms",
     anchor: "/designing-algorithms.html",
     children: [
+      {
+        title: "Single-Port FPGA Multiplexer",
+        anchor: "/wip.html",
+      },
       {
         title: "Rabin-p vs. RSA Public-Key Cryptosystems",
         anchor: "/designing-algorithms/rabin-p-cryptosystem.html",
